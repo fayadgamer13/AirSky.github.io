@@ -1,0 +1,122 @@
+/* 1. CUSTOM FONT */
+@font-face {
+    font-family: 'MyCustomFont';
+    src: url('fonts/spacemono.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+/* 2. THEME ENGINE VARIABLES */
+:root {
+    /* Default Dark Mode */
+    --accent: #fffb00;
+    --bg: #0b0b0d;
+    --card: #16161a;
+    --text: #ffffff;
+    --text-soft: #a0a0cc;
+    --input-bg: #000000;
+    --border: rgba(255, 255, 255, 0.1);
+    --sidebar-w: 240px;
+    --main-font: 'MyCustomFont', sans-serif;
+}
+
+/* Explicit Light Mode */
+[data-theme="light"] {
+    --bg: #f0f2f5;
+    --card: #ffffff;
+    --text: #1a1a2e;
+    --text-soft: #555577;
+    --input-bg: #ffffff;
+    --border: rgba(0, 0, 0, 0.1);
+}
+
+/* Auto Mode: Syncs with System Settings */
+@media (prefers-color-scheme: light) {
+    [data-theme="auto"] {
+        --bg: #f0f2f5;
+        --card: #ffffff;
+        --text: #1a1a2e;
+        --text-soft: #555577;
+        --input-bg: #ffffff;
+        --border: rgba(0, 0, 0, 0.1);
+    }
+}
+
+/* 3. CORE STYLES */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: var(--main-font);
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+    transition: background 0.3s, color 0.3s;
+}
+
+/* --- SIDEBAR --- */
+.side-nav {
+    width: var(--sidebar-w); height: 100vh; background: var(--card);
+    position: fixed; left: 0; top: 0; border-right: 1px solid var(--border);
+    display: flex; flex-direction: column; z-index: 1000; transition: 0.3s;
+}
+.side-nav.collapsed { width: 80px; }
+.side-nav.collapsed span { display: none; }
+
+.nav-item {
+    width: 100%; padding: 15px 25px; display: flex; align-items: center; gap: 15px;
+    background: none; border: none; color: var(--text-soft); cursor: pointer;
+    font-family: var(--main-font); transition: 0.2s;
+}
+.nav-item.active { color: var(--accent); background: rgba(255,255,255,0.05); border-left: 3px solid var(--accent); }
+
+/* --- CONTENT AREA --- */
+.content-wrapper { margin-left: var(--sidebar-w); flex: 1; padding: 30px; transition: 0.3s; overflow-y: auto; }
+.side-nav.collapsed ~ .content-wrapper { margin-left: 80px; }
+
+header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+.profile-avatar { width: 50px; height: 50px; border-radius: 50%; border: 2px solid var(--accent); object-fit: cover; }
+
+/* --- SEARCH & GRID --- */
+.search-container { margin-bottom: 25px; }
+#game-search {
+    width: 100%; max-width: 500px; padding: 12px 20px; border-radius: 12px;
+    border: 1px solid var(--border); background: var(--input-bg); color: var(--text);
+    font-family: var(--main-font); outline: none;
+}
+
+.games-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 20px;
+}
+
+.game-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 15px;
+    padding: 15px; text-align: center; cursor: pointer; transition: 0.3s;
+    display: flex; flex-direction: column; align-items: center;
+}
+.game-card:hover { transform: translateY(-5px); border-color: var(--accent); box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
+.game-card img { width: 100%; aspect-ratio: 1/1; border-radius: 12px; margin-bottom: 10px; object-fit: cover; }
+
+/* --- SETTINGS MODAL --- */
+dialog {
+    margin: auto; border: none; border-radius: 20px; padding: 0;
+    background: var(--card); color: var(--text); width: 90%; max-width: 400px;
+    font-family: var(--main-font);
+}
+dialog::backdrop { background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); }
+.modal-header { padding: 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; }
+.modal-content { padding: 25px; display: flex; flex-direction: column; gap: 20px; }
+.setting-group { display: flex; flex-direction: column; gap: 8px; }
+.setting-group input, .setting-group select { 
+    background: var(--input-bg); color: var(--text); padding: 10px; border-radius: 8px; border: 1px solid var(--border); 
+}
+
+/* --- RESPONSIVE FIXES --- */
+@media (max-width: 768px) {
+    .games-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    .side-nav { width: 80px; }
+    .content-wrapper { margin-left: 80px; padding: 15px; }
+}

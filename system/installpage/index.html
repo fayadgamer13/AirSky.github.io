@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Download AirSky</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        :root {
+            /* Dark Theme (Default) */
+            --bg-color: #0b0b0d;
+            --card-bg: #16161a;
+            --text-main: #ffffff;
+            --text-muted: #8b949e;
+            --accent: #58a6ff;
+            --border: #30363d;
+            --btn-text: #ffffff;
+        }
+
+        @media (prefers-color-scheme: light) {
+            :root {
+                --bg-color: #f6f8fa;
+                --card-bg: #ffffff;
+                --text-main: #1f2328;
+                --text-muted: #656d76;
+                --border: #d0d7de;
+                --btn-text: #ffffff;
+            }
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            padding: 60px 20px;
+            transition: background-color 0.3s ease;
+        }
+
+        @font-face {
+    font-family: 'MyCustomFont';
+    src: url('fonts/spacemono.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+        .wrapper {
+            max-width: 800px;
+            width: 100%;
+            text-align: center;
+        }
+
+        h1 { font-size: 3rem; font-weight: 800; margin-bottom: 8px; }
+        .hero-p { color: var(--text-muted); font-size: 1.2rem; margin-bottom: 40px; }
+
+        /* Button Styling */
+        .button-container {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 60px;
+        }
+
+        .download-btn {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 24px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 600;
+            color: var(--btn-text);
+            transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .download-btn:hover { transform: scale(1.05); }
+
+        .win { background-color: #0078d4; }
+        .and { background-color: #3ddc84; color: #000; } /* Android is usually black text on green */
+
+        .btn-icon {
+            width: 24px;
+            height: 24px;
+            object-fit: contain;
+        }
+
+        /* Platform Guide Section */
+        .guide-section {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 40px;
+            text-align: left;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+        }
+
+        h2 { margin-top: 0; font-size: 1.5rem; margin-bottom: 25px; }
+
+        .platform-row {
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .platform-row:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+
+        .tag {
+            background: var(--accent);
+            color: #fff;
+            font-size: 0.7rem;
+            padding: 2px 8px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            font-weight: bold;
+            vertical-align: middle;
+            margin-right: 8px;
+        }
+
+        .platform-title { font-weight: 700; font-size: 1.1rem; }
+        .instructions { color: var(--text-muted); margin-top: 8px; font-size: 0.95rem; }
+        
+        code {
+            font-family: ui-monospace, monospace;
+            background: #0b0b0d;
+            padding: 0.2em 0.4em;
+            border-radius: 6px;
+            font-size: 85%;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="wrapper">
+        <h1>Download AirSky</h1>
+        <p class="hero-p">Unblocked Games. Pick your Platform</p>
+
+        <div class="button-container">
+            <!-- Windows Button -->
+            <a href="[link here]" class="download-btn win">
+                <img src="windows.svg" alt="Windows" class="btn-icon">
+                Download for Windows(Coming Soon)
+            </a>
+
+            <!-- Android Button -->
+            <a href="[link here]" class="download-btn and">
+                <img src="android.svg" alt="Android" class="btn-icon">
+                Download for Android(Coming Soon)
+            </a>
+        </div>
+
+        <div class="guide-section">
+            <h2>Manual Installation Guide</h2>
+              <p class="description">Make Sure you're on AirSky so you can follow the steps below.</p>
+
+            <div class="platform-row">
+                <span class="tag">iOS and iPadOS</span> <span class="platform-title">iOS</span>
+                <p class="instructions">Tap on <strong>Share</strong> then, tap <strong>"Add to Home Screen"</strong> After that name the AirSky name from <code>"MySite"</code> to <code>"AirSky"</code> tap <strong>OK</strong></p>
+            </div>
+
+            <div class="platform-row">
+                <span class="tag">Mac Safari</span> <span class="platform-title">macOS</span>
+                <p class="instructions">Click on "Share" button then click <strong>"Add to Dock"</strong> Then Name AirSky from <code>"MySite"</code> to <code>"AirSky"</code> click <strong>add</strong>.</p>
+            </div>
+
+            <div class="platform-row">
+                <span class="tag">Other Platforms</span> <span class="platform-title">Chrome Browser</span>
+                <p class="instructions">Click <strong>⋮</strong> then click on <strong>"cast, save and share"</strong> click <strong>"Install this page as app"</strong> Name AirSky from <code>"MySite"</code> to <code>"AirSky"</code>click <strong>Install</strong>.</p>
+            </div>
+             
+            <div class="platform-row">
+                <span class="tag">Other Platforms</span> <span class="platform-title">Edge Browser</span>
+                <p class="instructions">Click <strong>⋯</strong> then click on <strong>"More tools"</strong> click <strong>"Apps"</strong> Click <strong>"Install this site as an app"</strong> Then Name AirSky from <code>"MySite"</code> to <code>"AirSky"</code>click <strong>Install</strong>.</p>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

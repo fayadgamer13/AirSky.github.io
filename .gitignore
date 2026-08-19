@@ -1,0 +1,21 @@
+node_modules/
+dist/
+.env
+*.log
+# If this is a game project (like Unity or Godot)
+Library/
+Temp/
+obj/
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Large game assets/temp
+*.log
+*.tmp
+system/temp/
+
+# Private settings
+.env
+sprunki/pyramixed.html

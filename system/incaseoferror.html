@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AirSky Hub</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/png" href="favicon-96x96.png" sizes="96x96" />
+<link rel="icon" type="image/svg+xml" href="favicon.svg" />
+<link rel="shortcut icon" href="favicon.ico" />
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png" />
+<meta name="apple-mobile-web-app-title" content="AirSky" />
+<link rel="manifest" href="site.webmanifest" />
+</head>
+<body>
+
+<img id="custom-cursor-follower" src="system/rounded.png" style="display:none; position:fixed; pointer-events:none; z-index:99999; width:32px; height:32px; transform: translate(-50%, -50%);">
+<nav class="side-nav" id="side-nav">
+        <button id="nav-toggle" style="background:none; border:none; color:var(--accent); padding:20px; font-size:1.5rem;">☰</button>
+        <button class="nav-item active" data-target="games-section">🎮 <span>Games</span></button>
+        <button class="nav-item" data-target="browser-tab-content">🌐 <span>Web Browser</span></button>
+        <a href="system/installpage/index.html" class="nav-item" id="download-link">📥 <span>Download App</span></a>
+        
+        <div class="sidebar-widgets">
+            <div class="widget-item">
+                <span id="live-clock">00:00:00</span>
+            </div>
+            <div class="widget-item status">
+                <div class="status-dot"></div>
+                <span>System Ready</span>
+            </div>
+            <div class="widget-item">
+                <span id="battery-icon">🔋</span>
+                <span id="battery-level">Checking...</span>
+            </div>
+        </div>
+    </nav>
+
+<div class="content-wrapper">
+    <header>
+        <div style="display:flex; align-items:center; gap:12px;">
+            <img id="profile-avatar" src="default-avatar.png" class="profile-avatar" onerror="this.src='https://via.placeholder.com/45'">
+            <h1 id="welcome-text">Welcome</h1>
+        </div>
+        <button id="settings-btn">Settings</button>
+    </header>
+
+    <main>
+        <section id="games-section" class="tab-content active">
+            
+            
+            <div id="recent-played-container" style="display: none; margin-bottom: 40px; width: 100%;">
+    <h2 style="margin-bottom: 20px; color: var(--accent); font-size: 1rem; letter-spacing: 1px; text-transform: uppercase;">Recently Played</h2>
+    <div id="recent-grid" class="games-grid">
+        </div>
+    <hr style="border: 0; border-top: 1px solid var(--border); margin: 30px 0;">
+</div>
+            <div class="search-container">
+                <input type="text" id="game-search" placeholder="Search your games...">
+            </div>
+
+            <div class="games-grid">
+
+                <div class="game-card folder-card" data-folder="minecraft-folder">
+    <div class="folder-icon">📂</div>
+    <p>Minecraft Versions</p>
+</div>
+
+<dialog id="minecraft-folder" class="folder-modal">
+    <div class="modal-header">
+        <h2 style="margin:0;">Minecraft Versions</h2>
+        <button class="close-folder">&times;</button>
+    </div>
+    <div class="modal-content">
+        <div class="games-grid">
+            <div class="game-card" data-url="minecraft\index.html/index.html">
+                <img src="minecraft/icon.svg" alt="Minecraft 1.8" loading="lazy">
+                <p>Minecraft 1.8</p>
+            </div>
+          <div class="game-card" data-url="minecraft/mcjava/target_teavm_javascript/javascript/EaglercraftX_1.8_Offline_en_US.html">
+            <img src="minecraft/icon.svg" alt="Minecraft Java 26.1" loading="lazy">
+            <p>Minecraft Java</p>
+        </div>
+         <div class="game-card" data-url="mc120\index.html">
+            <img src="minecraft/icon.svg" alt="Minecraft Java 1.20.4" loading="lazy">
+            <p>Minecraft Java 1.20.4</p>
+        </div>
+        </div>
+    </div>
+</dialog>
+
+        <div class="game-card" data-url="cookieclicker/index.html">
+            <img src="cookieclicker/icon.png" alt="Cookie Clicker" loading="lazy">
+            <p>Cookie Clicker</p>
+        </div>
+
+        <div class="game-card" data-url="territorial.io/index.html">
+            <img src="territorial.io/icon.svg" alt="Territorial.io" loading="lazy">
+            <p>Territorial.io</p>
+        </div>
+
+        <div class="game-card" data-url="infinitecraft/index.html">
+            <img src="infinitecraft/icon.png" alt="Infinite Craft" loading="lazy">
+            <p>Infinite Craft</p>
+        </div>
+
+        <div class="game-card" data-url="ducklife4/index.html">
+            <img src="ducklife4/splash.jpg" alt="Duck Life 4" loading="lazy">
+            <p>Duck Life 4</p>
+        </div>
+
+        <div class="game-card" data-url="crossyroad/index.html">
+            <img src="crossyroad/crossyroad.png" alt="Crossy Road" loading="lazy">
+            <p>Crossy Road</p>
+        </div>
+
+        <div class="game-card" data-url="gd/index.html">
+            <img src="gd/icon.jpeg" alt="Geometry Dash" loading="lazy">
+            <p>Geometry Dash</p>
+        </div>
+
+        <div class="game-card" data-url="monkeymart/index.html">
+            <img src="monkeymart/icon.png" alt="Monkey Mart" loading="lazy">
+            <p>Monkey Mart</p>
+        </div>
+
+        <div class="game-card" data-url="snowrider/index.html">
+            <img src="snowrider/icon.jpeg" alt="Snow Rider" loading="lazy">
+            <p>Snow Rider</p>
+        </div>
+
+        <div class="game-card" data-url="capyfanmade/index.html">
+            <img src="capyfanmade/icon.png" alt="Capybara Clicker Fanmade" loading="lazy">
+            <p>Capybara Clicker Fanmade</p>
+        </div>
+
+        <div class="game-card" data-url="ovo2/index.html">
+            <img src="ovo2/icon.png" alt="OvO 2" loading="lazy">
+            <p>OvO 2</p>
+        </div>
+
+        <div class="game-card" data-url="stickmanh/index.html">
+            <img src="stickmanh/icon.png" alt="Stickman Hook" loading="lazy">
+            <p>Stickman Hook</p>
+        </div>
+
+        <div class="game-card" data-url="drivemad/index.html">
+            <img src="drivemad/icon.png" alt="Drive Mad" loading="lazy">
+            <p>Drive Mad</p>
+        </div>
+
+        <div class="game-card" data-url="fnf/index.html">
+            <img src="fnf/icon.png" alt="Friday Night Funkin" loading="lazy">
+            <p>Friday Night Funkin</p>
+        </div>
+
+        <div class="game-card" data-url="slope2/index.html">
+            <img src="slope2/icon.png" alt="Slope" loading="lazy">
+            <p>Slope</p>
+        </div>
+
+        <div class="game-card" data-url="leveld/index.html">
+            <img src="leveld/icon.jpeg" alt="Level Devil" loading="lazy">
+            <p>Level Devil</p>
+        </div>
+           
+        <div class="game-card" data-url="timeshooter/2/index.html">
+            <img src="timeshooter/2/icon.jpeg" alt="Time Shooter 2" loading="lazy">
+            <p>Time Shooter 2</p>
+        </div>
+
+        <div class="game-card" data-url="timeshooter/3/index.html">
+            <img src="timeshooter/3/icon.jpeg" alt="Time Shooter 3" loading="lazy">
+            <p>Time Shooter 3</p>
+        </div>
+
+        <div class="game-card" data-url="idleants/src/index.html">
+            <img src="idleants/icon.jpg" alt="Idle Ants" loading="lazy">
+            <p>Idle Ants</p>
+        </div>
+
+        <div class="game-card" data-url="baldi/index.html">
+            <img src="baldi/icon.png" alt="Baldi basics" loading="lazy">
+            <p>Baldi Basics</p>
+        </div>
+
+        <div class="game-card" data-url="ducklife4/5/index.html">
+            <img src="ducklife4/5/icon.png" alt="Duck Life 5" loading="lazy">
+            <p>Duck Life 5</p>
+        </div>
+
+        <div class="game-card" data-url="rollingsky/scratch/illusion/index.html">
+            <img src="rollingsky/scratch/illusion/icon.png" alt="Rolling Sky illusion Scratch Version" loading="lazy">
+            <p>Rolling Sky illusion (S. Version)</p>
+        </div>
+        
+        <div class="game-card" data-url="firuitn/index.html">
+            <img src="firuitn/FruitNinjaTeaser.jpg" alt="Fruit Ninja" loading="lazy">
+            <p>Fruit Ninja</p>
+        </div>
+        
+        <div class="game-card" data-url="pacman/index.html">
+            <img src="pacman/icon.png" alt="Pac-man" loading="lazy">
+            <p>Pac-man</p>
+        </div>
+        
+        <div class="game-card" data-url="subway/index.html">
+            <img src="subway/NewYorkIcon.png" alt="Subway Surfers" loading="lazy">
+            <p>Subway Surfers</p>
+        </div>
+
+        <div class="game-card" data-url="tombofmask/index.html">
+            <img src="tombofmask/icon.png" alt="Tomb Of the Mask" loading="lazy">
+            <p>Tomb Of the Mask</p>
+        </div>
+
+            <div class="game-card" data-url="tombofmask/scratch/index.html">
+            <img src="tombofmask/scratch/iconscratch.png" alt="Tomb Of the Mask Scratch Version" loading="lazy">
+            <p>Tomb Of the Mask (S. Version)</p>
+        </div>
+
+               <div class="game-card" data-url="swingo/index.html">
+            <img src="swingo/icon.png" alt="Siwngo" loading="lazy">
+            <p>Siwngo</p>
+        </div>
+
+            <div class="game-card" data-url="scrapmetal/index.html">
+            <img src="scrapmetal/icon.jpg" alt="Scrap Metal" loading="lazy">
+            <p>Scrap Metal</p>
+        </div>
+
+              <div class="game-card" data-url="firuitmerge/index.html">
+            <img src="firuitmerge/icon.jpg" alt="Fruit Merge" loading="lazy">
+            <p>Fruit Merge</p>
+        </div>
+
+           <div class="game-card" data-url="system/QE13IP80.html">
+            <img src="papasgame/icons/sushiria.png" alt="Papa's Sushiria" loading="lazy">
+            <p>Papa's Sushiria</p>
+        </div>
+
+            <div class="game-card" data-url="system/QE13IP80.html">
+            <img src="papasgame/icons/pastaria.png" alt="Papa's Pastaria" loading="lazy">
+            <p>Papa's Pastaria</p>
+        </div>
+
+          <div class="game-card" data-url="papasgame/games/burgeria/index.html">
+            <img src="papasgame/icons/burgeria.png" alt="Papa's Burgeria" loading="lazy">
+            <p>Papa's Burgeria</p>
+        </div>
+
+          <div class="game-card" data-url="sprunki/index.html">
+            <img src="sprunki/icon.png" alt="Sprunki" loading="lazy">
+            <p>Sprunki</p>
+        </div>
+
+           <div class="game-card" data-url="sprunki/pyramixed.html">
+            <img src="sprunki/iconpyramixed.png" alt="Sprunki Pyramixed" loading="lazy">
+            <p>Sprunki Pyramixed</p>
+        </div>
+
+            <div class="game-card" data-url="run/index.html">
+            <img src="run/icon.png" alt="Run 3" loading="lazy">
+            <p>Run 3</p>
+        </div>
+
+          <div class="game-card" data-url="run/index2.html">
+            <img src="run/icon.png" alt="Run 2" loading="lazy">
+            <p>Run 2</p>
+        </div>
+
+          <div class="game-card" data-url="run/index1.html">
+            <img src="run/icon.png" alt="Run 1" loading="lazy">
+            <p>Run 1</p>
+        </div>
+
+            <div class="game-card" data-url="paperio/index.html">
+            <img src="paperio/icon.jpg" alt="Paper.io" loading="lazy">
+            <p>Paper.io</p>
+        </div>
+
+          <div class="game-card" data-url="slitherio/slither-io/index.html">
+            <img src="slitherio/icon.png" alt="Slither.io Fanmade" loading="lazy">
+            <p>Slither.io Fanmade</p>
+        </div>
+
+                 <div class="game-card" data-url="flappybird/index.html">
+            <img src="flappybird/icon.png" alt="Flappy Bird" loading="lazy">
+            <p>Flappy Bird</p>
+        </div>
+
+             <div class="game-card" data-url="templerun2/index.html">
+            <img src="templerun2/img/og-icon.png" alt="Temple Run 2" loading="lazy">
+            <p>Temple Run 2</p>
+        </div>
+
+         <div class="game-card" data-url="firebwaterg/index.html">
+            <img src="firebwaterg/icon.png" alt="Fireboy and Watergirl" loading="lazy">
+            <p>Fireboy and Watergirl</p>
+        </div>
+          
+        <div class="game-card" data-url="doodlejump/index.html">
+            <img src="doodlejump/icon.png" alt="Doodle Jump" loading="lazy">
+            <p>Doodle Jump</p>
+        </div>
+
+            <div class="game-card" data-url="https://www.cosmos.so/e/1428933341">
+            <img src="Apps/comos.png" alt="Cosmos" loading="lazy">
+            <p>Cosomos</p>
+        </div>
+
+            <div class="game-card" data-url="houseofhazards/index.html">
+            <img src="houseofhazards/icon.png" alt="House of Hazards" loading="lazy">
+            <p>House of Hazards</p>
+        </div>
+
+         <div class="game-card" data-url="fnaf/index.html">
+            <img src="fnaf/icon.png" alt="Five Nights at Freddy's 2" loading="lazy">
+            <p>Five Nights at Freddy's 2</p>
+        </div>
+
+         <div class="game-card" data-url="system/QE13IP80.html">
+            <img src="bottleflip/icon.png" alt="Bottle Flip" loading="lazy">
+            <p>Bottle Flip</p>
+        </div>
+
+          <div class="game-card" data-url="blockblast/index.html">
+            <img src="blockblast/icon.jpg" alt="Block Blast" loading="lazy">
+            <p>Block Blast</p>
+        </div>
+
+         <div class="game-card" data-url="coreball/index.html">
+            <img src="coreball/icon.png" alt="Coreball" loading="lazy">
+            <p>Coreball</p>
+        </div>
+
+         <div class="game-card" data-url="schoolboy/popup.html">
+            <img src="schoolboy/icon.png" alt="SchoolBoy Runaway" loading="lazy">
+            <p>SchoolBoy Runaway</p>
+        </div>
+
+         <div class="game-card" data-url="agar.io/index.html">
+            <img src="agar.io/icon.png" alt="Agar.io" loading="lazy">
+            <p>Agar.io</p>
+        </div>
+
+            <div class="game-card" data-url="2048/index.html">
+            <img src="2048/icon.png" alt="2048" loading="lazy">
+            <p>2048</p>
+        </div>
+
+           <div class="game-card" data-url="retrobowl/index.html">
+            <img src="retrobowl/icon.png" alt="Retro Bowl" loading="lazy">
+            <p>Retro Bowl</p>
+        </div>
+
+        <div class="game-card" data-url="https://forms.gle/hyMDwAU9w14tmu9a7">
+            <img src="system/RE.png" alt="Game Request" loading="lazy">
+            <p>Game Request</p>
+                </div>
+
+        </section>
+
+<dialog id="settings-modal">
+    <div class="modal-header">
+        <h2>Settings</h2>
+        <button id="close-modal-top">×</button>
+    </div>
+    <div class="modal-content">
+        <div class="setting-group">
+            <label>Name</label>
+            <input type="text" id="username-input" placeholder="Your Name">
+        </div>
+        <div class="setting-group">
+            <label>Profile Picture</label>
+            <input type="file" id="avatar-upload" accept="image/*" style="display:none">
+            <button class="import-btn" onclick="document.getElementById('avatar-upload').click()">📁 Import Image</button>
+            <input type="hidden" id="avatar-input">
+        </div>
+       <div class="setting-group">
+    <label>Custom Cursor</label>
+    <div style="display: flex; gap: 10px;">
+        <button class="import-btn" onclick="document.getElementById('cursor-upload').click()">Upload Cursor</button>
+        <button id="reset-cursor" style="background: #ff4444; color: white; padding: 10px; border-radius: 8px; border: none;">Reset</button>
+    </div>
+    <input type="file" id="cursor-upload" accept="image/*" style="display:none">
+    <input type="hidden" id="cursor-input">
+</div>
+        <div class="setting-group">
+            <label>Theme</label>
+            <select id="theme-select">
+                <option value="dark">Dark Mode</option>
+                <option value="light">Light Mode</option>
+            </select>
+        </div>
+        <div class="setting-group">
+            <label>Accent Color</label>
+            <input type="color" id="color-input" value="#fffb00">
+        </div>
+        <div class="setting-group">
+    <label>Accessibility</label>
+    <div style="display: flex; align-items: center; gap: 10px; background: var(--input-bg); padding: 10px; border-radius: 8px; border: 1px solid var(--border);">
+        <span style="font-size: 0.85rem;">High Contrast</span>
+        <input type="checkbox" id="high-contrast-toggle" style="width: 20px; height: 20px; cursor: pointer;">
+    </div>
+</div>
+
+<div class="setting-group">
+    <label>Tab Cloaking (about:blank)</label>
+    <div style="display:flex; align-items:center; gap:10px;">
+        <input type="checkbox" id="cloak-toggle">
+        <span style="font-size:0.8rem; color:var(--text-soft);">Open games in a hidden tab</span>
+    </div>
+</div>
+        <button id="save-settings" class="btn-primary">Save Changes</button>
+    </div>
+</dialog>
+
+<div id="browser-tab-content" class="tab-content">
+    <div class="browser-ui">
+        <div class="browser-bar">
+            <div class="browser-controls">
+                <button id="b-back">←</button>
+                <button id="b-reload">↻</button>
+            </div>
+            <input type="text" id="b-input" placeholder="Search or enter URL (e.g. bing.com)">
+            <button id="b-go">Go</button>
+        </div>
+        <div class="iframe-wrapper">
+            <iframe id="main-browser-frame" src="about:blank"></iframe>
+        </div>
+    </div>
+</div>
+
+<div id="notification-container" style="position: fixed; bottom: 20px; right: 20px; z-index: 10000; display: flex; flex-direction: column; gap: 10px; pointer-events: none;"></div>
+
+<script src="script.js"></script>
+</body>
+</html>
