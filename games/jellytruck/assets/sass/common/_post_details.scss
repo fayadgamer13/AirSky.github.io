@@ -1,0 +1,247 @@
+/*--------------------------------------------------------------
+8. Post Details
+----------------------------------------------------------------*/
+.cs-single_post {
+  font-size: 18px;
+  line-height: 1.7em;
+  h2 {
+    margin-bottom: 15px;
+  }
+  .cs-post_avatar {
+    margin-bottom: 35px;
+  }
+  img {
+    border-radius: 10px;
+    margin-bottom: 40px;
+  }
+  .cs-post_avatar .cs-post_avatar_img img {
+    margin: 0;
+  }
+
+  ul {
+    padding-left: 50px;
+    list-style: disc;
+    margin-bottom: 30px;
+    li {
+      &:not(:last-child) {
+        margin-bottom: 10px;
+      }
+    }
+  }
+}
+
+.comment-reply-title {
+  font-size: 24px;
+  font-weight: 600;
+  margin-bottom: 20px;
+}
+
+.comment-notes {
+  font-size: 16px;
+  margin-bottom: 20px;
+}
+
+.comment-form-comment label,
+.comment-form-author label,
+.comment-form-email label,
+.comment-form-url {
+  display: none;
+}
+
+#comment,
+#author,
+#email {
+  border: none;
+  display: block;
+  padding: 11px 25px;
+  width: 100%;
+  transition: all 0.3s ease;
+  border-radius: 5px;
+
+  &:focus {
+    outline: none;
+    border-color: $primary;
+  }
+}
+
+#respond {
+  padding: 40px 40px;
+  border-radius: 15px;
+}
+
+.cs-comment_btn {
+  line-height: 1.6em;
+  display: inline-flex;
+  border: none;
+  border-radius: 25px;
+  padding: 10px 30px;
+  transition: all 0.3s ease;
+}
+
+.comments-title,
+.comment-reply-title {
+  font-size: 30px;
+  margin-bottom: 30px;
+}
+
+.cs-comment_wrapper {
+  padding: 45px 30px;
+  margin-bottom: 70px;
+  border-radius: 10px;
+  background-color: #fff;
+  padding-bottom: 4px;
+}
+
+.comment-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  > .comment {
+    padding: 0px 0px 30px;
+    margin-bottom: 0px;
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+  .children {
+    padding-top: 30px;
+    .comment {
+      &:not(:first-child) {
+        border-width: 1px 0 0;
+        border-style: solid;
+        margin-top: 30px;
+        padding-top: 30px;
+      }
+    }
+  }
+}
+
+.comment-list .bypostauthor:not(:last-child) {
+  border-bottom: 1px solid $border;
+  margin-bottom: 50px;
+}
+
+.comment-list .comment-body {
+  padding-top: 0;
+  position: relative;
+}
+
+.comment-list ol {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.comment-list ol.children {
+  padding-left: 50px;
+}
+
+.comment-list .avatar {
+  position: absolute;
+  left: 0;
+  top: 5px;
+  border-radius: 50%;
+  height: 40px;
+  width: 40px;
+}
+
+.comment-list .comment-author .says {
+  display: none;
+}
+
+.comment-list .fn {
+  font-style: initial;
+  font-weight: 500;
+  color: $primary;
+  display: inline-block;
+  font-size: 18px;
+  margin-bottom: 0px;
+  line-height: 1.2em;
+}
+
+.comment-list .comment-meta {
+  display: block;
+  font-size: 14px;
+  margin-bottom: 10px;
+  line-height: 1.2em;
+  margin-top: 5px;
+}
+
+.comment-list .comment-author {
+  padding-left: 52px;
+  position: relative;
+}
+
+.comment-list .comment-meta {
+  padding-left: 52px;
+}
+
+.comment-list .comment-meta a:hover {
+  color: $accent;
+}
+
+.comment-list .comment-meta + p,
+.comment-list .comment-meta + p + p {
+  margin-bottom: 0;
+}
+
+.comment-list .reply {
+  line-height: 1.5em;
+  font-size: 16px;
+  margin-top: 10px;
+}
+
+.comment-list .reply a {
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  color: $accent;
+  line-height: inherit;
+  svg {
+    margin-left: 7px;
+  }
+  &:hover {
+    opacity: 0.8;
+  }
+}
+
+.url {
+  font-weight: 600;
+  color: $primary;
+  font-size: 16px;
+}
+
+.comment-list .bypostauthor .comment-body:last-child {
+  margin-bottom: 0;
+}
+
+.comment-reply-title small {
+  margin-left: 15px;
+  font-size: 16px;
+  font-weight: 500;
+  color: red;
+}
+
+.comment-reply-title small a:hover {
+  text-decoration: underline;
+}
+
+@media screen and (max-width: 991px) {
+  .cs-single_post {
+    font-size: 16px;
+    line-height: 1.5em;
+  }
+  .cs-single_post h2 {
+    font-size: 30px;
+  }
+  .cs-single_post ul li:not(:last-child) {
+    margin-bottom: 5px;
+  }
+  #respond {
+    padding: 40px 30px;
+    border-radius: 15px;
+  }
+  .comment-list ol.children {
+    padding-left: 25px;
+  }
+}

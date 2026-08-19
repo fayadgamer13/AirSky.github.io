@@ -1,0 +1,92 @@
+/*--------------------------------------------------------------
+13. Icon Box
+----------------------------------------------------------------*/
+.cs-iconbox.cs-style1 {
+  text-align: center;
+  border-radius: 10px;
+  padding: 50px 23px 45px;
+  .cs-iconbox_title {
+    font-size: 20px;
+    margin-bottom: 20px;
+  }
+  .cs-iconbox_icon {
+    margin-bottom: 25px;
+  }
+  &.cs-type1 {
+    background-color: transparent;
+    text-align: left;
+    padding: 0;
+  }
+}
+
+.cs-iconbox.cs-style2 {
+  background-color: #fff;
+  border-radius: 5px;
+  text-align: center;
+  padding: 35px 0 30px;
+  .cs-iconbox_icon {
+    margin-bottom: 15px;
+  }
+  .cs-iconbox_title {
+    font-size: 28px;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+  .cs-iconbox_subtitle {
+    margin: 0;
+  }
+}
+
+.cs-iconbox.cs-style3 {
+  padding: 30px;
+  border-radius: 15px;
+  transition: all 0.4s ease;
+  &:hover {
+    transform: translateY(-3px);
+  }
+  .cs-iconbox_img {
+    margin-bottom: 20px;
+  }
+  .cs-iconbox_text {
+    margin-bottom: 20px;
+  }
+  .cs-iconbox_btn {
+    color: $accent;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    i, svg {
+      margin-left: 8px;
+    }
+    &:hover {
+      text-decoration: underline;
+      color: $accent;
+    }
+  }
+}
+
+.cs-iconbox.cs-style4 {
+  background: linear-gradient(116.85deg, rgba(252, 70, 107, 0.15) 0%, rgba(63, 94, 251, 0.15) 100%);
+  border: 1px solid rgba(55, 114, 255, 0.5);
+  backdrop-filter: blur(250px);
+  padding: 40px 15px 35px;
+  border-radius: 15px;
+  transition: all 0.3s ease;
+  h3 {
+    font-size: 18px;
+    margin: 0;
+    margin-top: 30px;
+  }
+  &:hover {
+    transform: scale(1.02);
+  }
+}
+
+@media screen and (max-width: 991px) {
+  .cs-iconbox.cs-style1 {
+    .cs-iconbox_title {
+      font-size: 18px;
+      margin-bottom: 10px;
+    }
+  }
+}

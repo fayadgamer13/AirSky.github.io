@@ -1,0 +1,111 @@
+/*--------------------------------------------------------------
+15. CTA
+----------------------------------------------------------------*/
+.cs-cta.cs-style1 {
+  display: flex;
+  align-items: center;
+  padding: 60px 100px;
+  border-radius: 15px;
+  background-color: rgba($accent, 0.1);
+  .cs-cta_img {
+    flex: none;
+    width: 50%;
+    padding-right: 100px;
+  }
+  .cs-cta_title {
+    font-size: 36px;
+    margin-bottom: 15px;
+  }
+  .cs-cta_subtitle {
+    margin-bottom: 22px;
+  }
+  &.cs-type1 {
+    .cs-cta_right {
+      max-width: 50%;
+    }
+    .cs-cta_img {
+      padding-right: 0px;
+      padding-left: 100px;
+      flex: 1;
+    }
+  }
+}
+.cs-cta.cs-style2 {
+  padding: 95px 30px 100px;
+  border-radius: 15px;
+  .cs-cta_title {
+    font-size: 36px;
+    margin-bottom: 14px;
+  }
+  .cs-cta_subtitle {
+    font-size: 18px;
+    line-height: 1.5em;
+    margin-bottom: 25px;
+  }
+  &.cs-type1 {
+    padding: 42px 20px;
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    flex-wrap: wrap;
+    >* {
+      margin: 10px;
+    }
+  }
+}
+@media screen and (max-width: 1199px) {
+.cs-cta.cs-style1 {
+  padding: 60px 50px;
+}
+.cs-cta.cs-style1 .cs-cta_img {
+  padding-right: 50px;
+}
+}
+@media screen and (max-width: 991px) {
+.cs-cta.cs-style1 {
+  flex-direction: column;
+  align-items: flex-start;
+  &.cs-type1 {
+    flex-direction: column-reverse;
+    .cs-cta_img {
+      padding-left: 0;
+      width: 100%;
+      text-align: left !important;
+    }
+  }
+}
+.cs-cta.cs-style1 .cs-cta_img {
+  padding-right: 0;
+  width: initial;
+  margin-bottom: 30px;
+}
+.cs-cta.cs-style1 .cs-cta_title {
+  font-size: 28px;
+}
+.cs-cta.cs-style1 .cs-btn cs-style1 {
+  padding: 8px 20px;
+}
+
+.cs-cta.cs-style2 .cs-cta_title {
+  font-size: 28px;
+}
+
+.cs-cta.cs-style2 .cs-cta_subtitle {
+  font-size: 14px;
+}
+
+.cs-cta.cs-style2 {
+  padding: 65px 30px 70px;
+}
+
+.cs-cta.cs-style1.cs-type1 .cs-cta_right {
+  max-width: 100%;
+}
+
+}
+@media screen and (max-width: 575px) {
+.cs-cta.cs-style1 {
+  padding: 60px 30px;
+}
+}

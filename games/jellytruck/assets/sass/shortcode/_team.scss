@@ -1,0 +1,51 @@
+/*--------------------------------------------------------------
+17. Team
+----------------------------------------------------------------*/
+.cs-team.cs-style1 {
+  padding: 30px 20px;
+  border-radius: 10px;
+  .cs-team_img {
+    height: 100px;
+    width: 100px;
+    margin: auto;
+    border-radius: 50%;
+    margin-bottom: 12px;
+     img {
+      height: 100%;
+      width: 100%;
+      object-fit: cover;
+      border-radius: inherit;
+      transition: all 0.5s ease;
+    }
+  }
+  .cs-member_name {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 0px;
+  }
+  .cs-member_social_links {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-top: 10px;
+    font-size: 18px;
+    a {
+      color: $accent;
+      &:hover {
+        opacity: 0.8;
+      }
+    }
+    >* {
+      margin: 0 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+  }
+  &:hover {
+    img {
+      transform: scale(1.05);
+    }
+  }
+}

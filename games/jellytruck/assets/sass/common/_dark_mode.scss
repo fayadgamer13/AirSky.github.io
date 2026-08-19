@@ -1,0 +1,181 @@
+/*--------------------------------------------------------------
+19. Dark Mode
+----------------------------------------------------------------*/
+body.cs-dark {
+  background-color: #080326;
+  color: rgba($white, 0.8);
+
+  .cs-footer_newsletter .cs-newsletter_input,
+  .cs-form_field,
+  .cs-select_arrow:before,
+  .cs-form_field.cs-white_bg,
+  .cs-btn.cs-style2 > span,
+  .cs-modal_container {
+    background: #0f0935;
+  }
+
+  .cs-collection_info,
+  .cs-collection_list_wrap {
+    background-color: #080326;
+  }
+
+  .cs-profile_box .cs-user_profile_link button,
+  .cs-accordians .cs-accordian_toggle {
+    color: rgba($white, 0.8);
+  }
+
+  h1, h2, h3, h4, h5, h6,
+  .cs-isotop_filter.cs-style1,
+  .cs-site_header,
+  .cs-primary_color,
+  .cs-card.cs-style3 .cs-catd_meta,
+  .cs-card.cs-style2 .cs-card_btn,
+  .cs-card.cs-style1 .cs-card_title,
+  .cs-search_input,
+  .cs-form_field,
+  .cs-single_product_head p,
+  .cs-activity .cs-activity_text a,
+  .cs-collection_list_number,
+  .cs-widget_list,
+  .url,
+  .cs-text_box.cs-style2,
+  .cs-profile_nav a,
+  .cs-btn.cs-style2 i, 
+  .cs-btn.cs-style2 svg,
+  .cs-delete_btn,
+  .cs-large_radio_in,
+  .cs-accordians .cs-accordian-body b,
+  .cs-nav .cs-nav_list .cs-mega-wrapper > li > a,
+  .cs-bid_card b,
+  .cs-bid_card .cs-bid_form_head,
+  .cs-bid_input_group input {
+    color: #fff;
+  }
+
+  .cs-card.cs-style3 .cs-card_subtitle,
+  .cs-card.cs-style3 .cs-catd_footer h4,
+  .cs-card.cs-style2 .cs-card_subtitle,
+  .cs-profile_box .cs-user_profile_link,
+  .cs-ternary_color,
+  .cs-author_card p,
+  .cs-edit_profile p,
+  .cs-form_card.cs-style1 .form-check,
+  .cs-contact_card .cs-contact_text,
+  .cs-bid_card,
+  .cs-media.cs-style1 .cs-media_subtitle {
+    color: rgba($white, 0.45);
+  }
+
+  .cs-card.cs-style3 .cs-catd_footer {
+    border-color: rgba($white, 0.1);
+  }
+
+  .cs-select_arrow::after {
+    border-color: rgba($white, 0.4);
+  }
+
+  .cs-gray_bg,
+  .cs-tag_widget a,
+  .cs-profile_nav a,
+  .cs-media.cs-style1,
+  .cs-bid_input_group input {
+    background-color: rgba($white, 0.08);
+  }
+
+  .cs-white_bg,
+  .cs-cta.cs-style1,
+  .cs-general_box_1,
+  .cs-general_box_2,
+  .cs-general_box_3,
+  .cs-cta.cs-style2,
+  .cs-filter_sidebar,
+  .cs-filter_head,
+  .cs-isotop_filter.cs-style1 ul,
+  .cs-iconbox.cs-style2,
+  .cs-large_radio_in,
+  .cs-contact_card,
+  .cs-contact_box,
+  .cs-modal_container_in {
+    background: linear-gradient(116.85deg, rgba(252, 70, 107, 0.2) 0%, rgba(63, 94, 251, 0.2) 100%);
+  }
+
+  .cs-site_header,
+  .cs-site_header.cs-style1.cs-sticky-active,
+  .cs-search .cs-search_input,
+  .cs-nav .cs-nav_list ul,
+  .cs-toggle_box .cs-toggle_body,
+  .cs-profile_box .cs-user_profile_link .cs-user_profile_link_in {
+    background: #110D2E;
+  }
+
+  .cs-partner,
+  .cs-iconbox.cs-style1.cs-type1 {
+    background: transparent;
+  }
+
+  .cs-card.cs-style4 .cs-avatar {
+    background-color: $white;
+    color: $primary;
+  }
+  .cs-card_like,
+  .cs-slider_arrows.cs-style2,
+  .cs-slider_arrows.cs-style1 {
+    color: $primary;
+  }
+
+  .cs-cta.cs-style2 .cs-btn,
+  .cs-profile_nav a:hover, .cs-profile_nav a.active {
+    background-color: $accent;
+    color: $white;
+  }
+
+  .cs-footer.cs-style1 .cs-footer_bg {
+    opacity: 0.1;
+  }
+
+  .cs-upload_btn {
+    background-color: $white;
+    color: $primary;
+    &:hover {
+      color: $white;
+      background-color: $accent;
+    }
+  }
+
+  .cs-delete_btn:hover {
+    color: $accent;
+  }
+
+  .cs-form_field::placeholder {
+    color: rgba($white, 0.45);
+  }
+  
+  .cs-form_field:-ms-input-placeholder {
+    color: rgba($white, 0.45);
+  }
+  
+  .cs-form_field::-ms-input-placeholder {
+    color: rgba($white, 0.45);
+  }
+
+  .cs-munu_toggle span, 
+  .cs-munu_toggle span:before, 
+  .cs-munu_toggle span:after {
+    background-color: $white;
+  }
+  .cs-toggle_active.cs-munu_toggle span {
+    background-color: transparent;
+  }
+  .cs-media.cs-style1 .cs-media_icon {
+    background: $white;
+  }
+  .cs-modal_overlay {
+    background: rgba($black, 0.9);
+  }
+}
+@media screen and (max-width: 1199px) {
+  body.cs-dark .cs-nav .cs-nav_list  {
+    background: #080326;
+    border-color: rgba($white, 0.1);
+  }
+}

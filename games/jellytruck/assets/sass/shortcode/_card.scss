@@ -1,0 +1,647 @@
+/*--------------------------------------------------------------
+12. Card
+----------------------------------------------------------------*/
+.cs-card.cs-style1 {
+  display: block;
+  border-radius: 5px;
+  transition: all 0.4s ease;
+  .cs-card_thumb {
+    border-radius: 5px;
+    padding: 10px 10px 0;
+    img {
+      width: 100%;
+      border-radius: inherit;
+    }
+  }
+  .cs-card_title {
+    margin: 0;
+    padding: 5px 10px;
+    color: $primary;
+    transition: all 0.3s ease;
+  }
+  &:hover {
+    transform: scale(1.04);
+    .cs-card_title {
+      color: $accent;
+    }
+  }
+}
+.cs-card.cs-style2 {
+  border-radius: 10px;
+  text-align: center;
+  .cs-card_thumb {
+    display: block;
+    border-radius: 10px 10px 0 0;
+    img {
+      border-radius: inherit;
+      width: 100%;
+    }
+  }
+  .cs-card_title {
+    font-weight: 600;
+    font-size: 18px;
+    margin-bottom: 0px;
+  }
+  .cs-card_subtitle {
+    font-size: 14px;
+    line-height: 1.5em;
+    margin-bottom: 10px;
+    color: $ternary;
+  }
+  .cs-avatar {
+    background: linear-gradient(116.85deg, #fc466b 0%, #3f5efb 100%);
+    border-radius: 50%;
+    height: 52px;
+    width: 52px;
+    padding: 1px;
+    margin: -26px auto 7px;
+    position: relative;
+    z-index: 1;
+    display: block;
+    transition: all 0.4s ease;
+    img {
+      border-radius: inherit;
+      height: 100%;
+      width: 100%;
+      object-fit: cover;
+    }
+    &:hover {
+      transform: scale(1.02);
+    }
+  }
+  .cs-card_btn {
+    font-weight: 500;
+    font-size: 12px;
+    display: inline-flex;
+    line-height: 1.5em;
+    border: 1px solid $accent;
+    padding: 4px 15px;
+    border-radius: 1.6em;
+    color: $primary;
+    &:hover {
+      color: #fff;
+      background-color: $accent;
+    }
+  }
+  .cs-card_info {
+    padding-bottom: 20px;
+  }
+}
+
+.cs-card.cs-style3 {
+  padding-top: 1px;
+  border-radius: 10px;
+  text-align: center;
+  .cs-card_thumb {
+    display: block;
+    border-radius: 10px 10px 0 0;
+    margin: 10px 10px 0 10px;
+    img {
+      border-radius: inherit;
+      width: 100%;
+    }
+  }
+  .cs-card_title {
+    font-weight: 600;
+    font-size: 18px;
+    margin-bottom: 0px;
+  }
+  .cs-card_subtitle {
+    font-size: 14px;
+    line-height: 1.5em;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: $ternary;
+    i {
+      color: #21A85A;
+      margin-right: 2px;
+    }
+  }
+  .cs-avatar {
+    border-radius: 50%;
+    height: 72px;
+    width: 72px;
+    margin: -36px auto 7px;
+    position: relative;
+    z-index: 1;
+    display: block;
+    img {
+      border-radius: inherit;
+      height: 100%;
+      width: 100%;
+      object-fit: cover;
+      transition: all 0.4s ease;
+    }
+    &:hover {
+      img {
+        transform: scale(1.02);
+      }
+    }
+  }
+  .cs-card_info {
+    padding: 0 20px 15px;
+  }
+  .cs-catd_meta {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    color: $primary;
+  }
+  .cs-catd_meta_item {
+    font-size: 14px;
+    line-height: 1.6em;
+    display: flex;
+    align-items: center;
+    i {
+      margin-right: 5px;
+    }
+  }
+  .cs-catd_footer {
+    display: flex;
+    text-align: left;
+    justify-content: space-between;
+    padding-top: 10px;
+    margin-top: 10px;
+    border-top: 1px solid $border;
+    .cs-left {
+      flex: 1;
+    }
+    h4 {
+      font-weight: 500;
+      font-size: 14px;
+      color: $ternary;
+      margin: 0;
+    }
+    p {
+      margin: 0;
+      font-size: 14px;
+      line-height: 1.6em;
+    }
+  }
+  .cs-avatar_status {
+    display: block;
+    position: absolute;
+    height: 14px;
+    width: 14px;
+    border-radius: 50%;
+    background-color: #21A85A;
+    top: 5px;
+    right: 5px;
+    border: 1px solid #fff;
+  }
+}
+
+.cs-card_like {
+  position: absolute;
+  z-index: 2;
+  right: 20px;
+  top: 20px;
+  background-color: #fff;
+  font-size: 14px;
+  line-height: 1.5em;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 1.6em;
+  padding: 2px 7px;
+  i {
+    color: #FF4E4E;
+    margin-right: 5px;
+  }
+}
+
+.cs-card.cs-style4 {
+  position: relative;
+  padding: 10px;
+  border-radius: 15px;
+  .cs-card_thumb {
+    border-radius: 15px 15px 0px 0px;
+    overflow: hidden;
+    display: block;
+    img {
+      width: 100%;
+      border-radius: inherit;
+    }
+  }
+  .cs-avatar {
+    font-size: 14px;
+    line-height: 1.5em;
+    display: inline-flex;
+    align-items: center;
+    position: relative;
+    z-index: 1;
+    padding-right: 15px;
+    border-radius: 1.6em;
+    &:hover {
+      color: $accent;
+    }
+    img {
+      height: 32px;
+      width: 32px;
+      border-radius: 50%;
+    }
+    span {
+      margin-left: 5px;
+    }
+  }
+  .cs-card_info {
+    padding: 0 10px;
+    margin-top: -16px;
+  }
+  .cs-card_title {
+    font-size: 16px;
+    margin-bottom: 10px;
+    margin-top: 10px;
+  }
+  .cs-card_price {
+    font-size: 14px;
+    line-height: 1.6em;
+    margin-bottom: 10px;
+  }
+  .cs-card_btn_1 {
+    font-size: 14px;
+    line-height: 1.5em;
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    i {
+      margin-right: 5px;
+    }
+    &:hover {
+      color: $accent;
+    }
+  }
+  hr {
+    background: linear-gradient(116.85deg, #FC466B 0%, #3F5EFB 100%);
+    opacity: 0.15;
+    margin: 0;
+  }
+  .cs-card_btn_2 {
+    font-weight: 500;
+    font-size: 12px;
+    color: #fff;
+    background-color: $accent;
+    border-radius: 1.6em;
+    line-height: 1.5em;
+    padding: 4px 16px;
+    position: relative;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    span {
+      position: relative;
+      z-index: 1;
+    }
+    &:after {
+      content: '';
+      position: absolute;
+      height: 100%;
+      width: 100%;
+      left: 0;
+      top: 0;
+      border-radius: inherit;
+      background: linear-gradient(116.85deg, #FC466B 0%, #3F5EFB 100%);
+      transition: all 0.4s ease;
+      opacity: 0;
+    }
+    &:hover {
+      color: #fff;
+      &::after {
+        opacity: 1;
+      }
+    }
+  }
+  .cs-card_footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    padding: 15px 0 10px;
+    margin: -3px;
+    >* {
+      margin: 3px;
+    }
+  }
+  &.cs-type1 {
+    .cs-avatar_images {
+      display: flex;
+      padding-left: 12px;
+      img {
+        width: 26px;
+        height: 26px;
+        border: 1px solid $white;
+        margin-left: -12px;
+      }
+    }
+    .cs-card_info {
+      margin-top: -13px;
+    }
+  }
+}
+
+.cs-card.cs-style5 {
+  border-radius: 5px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 15px;
+  >* {
+    margin: 5px 0;
+  }
+  .cs-card_left {
+    margin-right: 10px;
+  }
+  h3 {
+    font-size: 18px;
+    margin-bottom: 5px;
+  }
+  p {
+    font-size: 14px;
+    line-height: 1.2em;
+    margin: 0;
+  }
+  .cs-card_img {
+    flex: none;
+    height: 52px;
+    width: 52px;
+    margin-right: 15px;
+    border-radius: 50%;
+    img {
+      height: 100%;
+      width: 100%;
+      object-fit: cover;
+      border-radius: inherit;
+    }
+  }
+  .cs-card_media {
+    display: flex;
+    align-items: center;
+  }
+  ul {
+    font-size: 14px;
+    line-height: 1.5em;
+    li {
+      &:not(:last-child) {
+        margin-bottom: 3px;
+      }
+    }
+  }
+}
+
+.cs-card.cs-style6 {
+  display: block;
+  border-radius: 10px;
+  padding: 30px 20px 25px;
+  transition: all 0.3s ease;
+  .cs-avatar {
+    margin: auto;
+    display: block;
+    height: 72px;
+    width: 72px;
+    margin-bottom: 20px;
+    border-radius: 50%;
+    img {
+      height: 100%;
+      width: 100%;
+      object-fit: cover;
+      border-radius: inherit;
+    }
+  }
+  .cs-card_title {
+    font-size: 18px;
+    margin-bottom: 4px;
+  }
+  &:hover {
+    color: $secondary;
+    transform: scale(1.02);
+  }
+}
+
+.cs-card.cs-style7 {
+  position: relative;
+  background: linear-gradient(116.85deg, rgba(252, 70, 107, 0.3) 0%, rgba(63, 94, 251, 0.3) 100%);
+  border-radius: 15px;
+  padding: 10px;
+  .cs-card_img {
+    height: 405px;
+    border-radius: inherit;
+    margin-bottom: 25px;
+  }
+  .cs-card_label {
+    background: linear-gradient(116.85deg, #FC466B 0%, #3F5EFB 100%);
+    border-radius: 0px 52px 52px 0px;
+    color: #fff;
+    display: inline-block;
+    font-weight: 500;
+    padding: 3px 15px;
+    position: absolute;
+    left: 0;
+    top: 20px;
+  }
+  .cs-card_title {
+    font-size: 28px;
+    color: #fff;
+    margin-bottom: 20px;
+  }
+  .cs-countdown {
+    background: linear-gradient(116.85deg, rgba(252, 70, 107, 0.3) 0%, rgba(63, 94, 251, 0.3) 100%);
+    border-radius: 10px;
+    max-width: 100%;
+    padding: 25px 30px 20px;
+    .cs-countdown_number {
+      width: 45px;
+      height: 40px;
+      font-size: 18px;
+    }
+    .cs-countdown_text {
+      font-size: 16px;
+      font-weight: 500;
+      margin-top: 5px;
+      color: #fff;
+    }
+  }
+  .cs-card_action_left {
+    text-align: center;
+    h4 {
+      margin: 0;
+      font-size: 28px;
+      color: #fff;
+    }
+    p {
+      margin: 0;
+      color: rgba(255, 255, 255, 0.8);
+    }
+  }
+  .cs-card_media {
+    display: flex;
+    align-items: center;
+    margin-bottom: 9px;
+    img {
+      flex: none;
+      height: 35px;
+      width: 35px;
+      margin-right: 10px;
+    }
+    h4 {
+      font-size: 14px;
+      color: #fff;
+      margin: 0;
+    }
+    p {
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.8);
+      margin: 0;
+      line-height: 1.2em;
+    }
+  }
+  .cs-card_action {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: linear-gradient(116.85deg, rgba(252, 70, 107, 0.3) 0%, rgba(63, 94, 251, 0.3) 100%);
+    border-radius: 10px;
+    padding: 15px 20px;
+  }
+}
+.cs-card.cs-style8 {
+  background: linear-gradient(116.85deg, rgba(252, 70, 107, 0.3) 0%, rgba(63, 94, 251, 0.3) 100%);
+  border-radius: 15px;
+  text-align: center;
+  position: relative;
+  padding: 10px 10px 15px;
+  .cs-card_label {
+    background: linear-gradient(116.85deg, #FC466B 0%, #3F5EFB 100%);
+    border-radius: 0px 52px 52px 0px;
+    color: #fff;
+    display: inline-block;
+    font-weight: 500;
+    padding: 3px 15px;
+    position: absolute;
+    left: 0;
+    top: 20px;
+  }
+  .cs-card_img {
+    height: 165px;
+    border-radius: 10px;
+  }
+  .cs-card_avatar {
+    margin-top: -50px;
+    img {
+      border: 3px solid #fff;
+      border-radius: 50%;
+    }
+  }
+  h2 {
+    font-size: 28px;
+    color: #fff;
+    margin: 0;
+  }
+  p {
+    color: rgba(255, 255, 255, 0.8);
+    font-weight: 500;
+    margin: 0 0 10px;
+    a {
+      color: $accent;
+      &:hover {
+        text-decoration: underline;
+      }
+    }
+  }
+  .cs-card_avatar {
+    margin-bottom: 10px;
+  }
+  .cs-card_meta {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .cs-card_meta_item {
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 5px;
+    color: #fff;
+    font-size: 14px;
+    line-height: 1.5em;
+    padding: 3px 15px;
+    margin: 5px;
+  }
+  &.cs-type1 {
+    padding: 0;
+    .cs-card_img {
+      height: 180px;
+      border-radius: 10px 10px 0px 0px;
+    }
+    h2 {
+      font-size: 18px;
+      padding: 12px 15px;
+    }
+  }
+  &.cs-type2 {
+    padding: 0 0 15px;
+    h2 {
+      font-size: 18px;
+    }
+    p {
+      margin: 0;
+      color: rgba(255, 255, 255, 0.6);
+    }
+    img {
+      height: 75px;
+      width: 75px;
+    }
+    .cs-card_img {
+      height: 130px;
+      border-radius: 10px 10px 0px 0px;
+    }
+  }
+}
+
+@media screen and (max-width: 1450px) {
+  .cs-card.cs-style7 .cs-card_action_left h4 {
+    font-size: 24px;
+  }
+}
+@media screen and (max-width: 1350px) {
+  .cs-card.cs-style7 {
+    .cs-card_row_in {
+      flex-direction: column;
+      >* {
+        width: 100%;
+      }
+    }
+    .cs-countdown {
+      margin-bottom: 20px;
+    }
+  }
+}
+@media screen and (max-width: 1199px) {
+  .cs-grid_5 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+@media screen and (max-width: 991px) {
+  .cs-card.cs-style2 .cs-card_title,
+  .cs-card.cs-style3 .cs-card_title {
+    font-size: 16px;
+  }
+}
+@media screen and (max-width: 767px) {
+  .cs-grid_5 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media screen and (max-width: 575px) {
+  .cs-grid_5 {
+    grid-template-columns: repeat(1, 1fr);
+  }
+  .cs-card.cs-style5 .cs-card_img {
+    height: 46px;
+    width: 46px;
+    margin-right: 10px;
+  }
+  .cs-card.cs-style5 .cs-card_left {
+    margin-right: 5px;
+  }
+}

@@ -1,0 +1,80 @@
+/*--------------------------------------------------------------
+18. Accordian
+----------------------------------------------------------------*/
+.cs-accordians {
+  .cs-accordian {
+    transition: all 0.3s ease;
+
+    &:not(:last-child) {
+      margin-bottom: 15px;
+    }
+
+    &.active {
+
+      .cs-accordian_toggle {
+        >* {
+          transform: rotate(180deg);
+        }
+      }
+    }
+  }
+
+  .cs-accordian_head {
+    cursor: pointer;
+    position: relative;
+    padding: 9px 35px 9px 0;
+    &:hover {
+      .cs-accordian_toggle,
+      .cs-accordian_title {
+        color: $accent;
+      }
+    }
+  }
+
+  .cs-accordian_title {
+    font-size: 16px;
+    font-weight: 500;
+    margin: 0;
+    transition: all 0.3s ease;
+  }
+
+  .cs-accordian_toggle {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 36px;
+    width: 36px;
+    position: absolute;
+    right: 0;
+    top: 0;
+    color: $primary;
+
+    >* {
+      transition: all 0.3s ease;
+    }
+  }
+
+  .cs-accordian-body {
+    padding-right: 35px;
+    b {
+      font-weight: 500;
+      color: $primary;
+    }
+    p {
+      margin: 0;
+    }
+  }
+}
+
+@media screen and (max-width: 991px) {
+  .cs-faq .cs-faq_title {
+    font-size: 28px;
+  }
+}
+@media screen and (max-width: 575px) {
+  .cs-accordians .cs-accordian-body {
+    br {
+      display: none;
+    }
+  }
+}

@@ -1,0 +1,2807 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MECCHA CHAMELEON: 3D Paint & Hide (Multiplayer)</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- Tone.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #05070c;
+            user-select: none;
+            overflow: hidden;
+        }
+        .font-outfit {
+            font-family: 'Outfit', sans-serif;
+        }
+        /* Glassmorphism panel styles */
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        /* Custom UI Transitions and Neon Styles */
+        .neon-border {
+            box-shadow: 0 0 15px rgba(168, 85, 247, 0.4);
+            border: 1px solid rgba(168, 85, 247, 0.6);
+        }
+        .neon-border-green {
+            box-shadow: 0 0 15px rgba(34, 197, 94, 0.4);
+            border: 1px solid rgba(34, 197, 94, 0.6);
+        }
+        .pulse-red {
+            animation: pulse-red-anim 1.5s infinite;
+        }
+        @keyframes pulse-red-anim {
+            0%, 100% { box-shadow: 0 0 10px rgba(239, 68, 68, 0.2); }
+            50% { box-shadow: 0 0 25px rgba(239, 68, 68, 0.8); }
+        }
+        .color-dot {
+            transition: transform 0.1s ease;
+        }
+        .color-dot:hover {
+            transform: scale(1.2);
+        }
+        /* Canvas and dynamic overlays */
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+        .nameplate {
+            position: absolute;
+            transform: translate(-50%, -100%);
+            pointer-events: none;
+            white-space: nowrap;
+            transition: opacity 0.1s ease;
+        }
+    </style>
+</head>
+<body class="text-white h-screen w-screen flex flex-col justify-between overflow-hidden relative">
+
+    <!-- Nameplates Overlay Container -->
+    <div id="nameplatesContainer" class="absolute inset-0 z-10 pointer-events-none"></div>
+
+    <!-- AUDIO CONSENT OVERLAY -->
+    <div id="audioConsentModal" class="absolute inset-0 bg-slate-950/95 z-50 flex flex-col items-center justify-center p-6 text-center">
+        <div class="max-w-md bg-slate-900 border border-slate-800 p-8 rounded-2xl shadow-2xl">
+            <div class="w-20 h-20 bg-purple-600/20 rounded-full flex items-center justify-center mx-auto mb-6">
+                <i class="fa-solid fa-volume-high text-4xl text-purple-400"></i>
+            </div>
+            <h1 class="text-3xl font-extrabold font-outfit mb-2 text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-500">MECCHA CHAMELEON</h1>
+            <p class="text-slate-400 text-sm mb-6 leading-relaxed">
+                Experience full immersion with procedurally generated sound effects for painting sprays, alert sweeps, whistles, and background ambient nodes!
+            </p>
+            <button onclick="initAudioAndStart()" class="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 font-bold py-4 px-8 rounded-xl transition duration-300 transform hover:scale-105 active:scale-95 shadow-lg shadow-purple-500/20 font-outfit text-lg">
+                ACTIVATE SOUND & PLAY
+            </button>
+        </div>
+    </div>
+
+    <!-- MAIN MENU LAYER -->
+    <div id="mainMenu" class="absolute inset-0 z-40 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 hidden">
+        <div class="max-w-5xl w-full grid grid-cols-1 lg:grid-cols-12 gap-6 bg-slate-900/90 border border-slate-800/80 p-6 md:p-8 rounded-3xl shadow-3xl overflow-y-auto max-h-[95vh]">
+            
+            <!-- Left Hero Panel (5 cols) -->
+            <div class="lg:col-span-5 flex flex-col justify-between space-y-6">
+                <div>
+                    <div class="inline-flex items-center gap-2 bg-purple-500/10 border border-purple-500/30 px-3 py-1 rounded-full text-purple-400 text-xs font-semibold mb-4 uppercase tracking-wider">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> Real-time Multiplayer Included
+                    </div>
+                    <h1 class="text-4xl md:text-5xl font-black font-outfit leading-none mb-3 text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-amber-400">
+                        MECCHA<br>CHAMELEON
+                    </h1>
+                    <p class="text-slate-300 text-xs leading-relaxed">
+                        Can you fool your friends or a high-tech surveillance drone? Scout your surroundings, select the perfect surface, and paint your mecha joints individually. Change your pose to break your silhouette and freeze!
+                    </p>
+                </div>
+                
+                <!-- Quick controls helper -->
+                <div class="bg-slate-950/60 border border-slate-800/80 p-4 rounded-xl space-y-2">
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest"><i class="fa-solid fa-gamepad mr-1"></i> Control Scheme</h3>
+                    <div class="grid grid-cols-2 gap-2 text-[11px] text-slate-300">
+                        <div><span class="bg-slate-800 px-1 py-0.5 rounded text-white font-mono font-bold mr-1">W A S D</span> Move / Fly</div>
+                        <div><span class="bg-slate-800 px-1 py-0.5 rounded text-white font-mono font-bold mr-1">F</span> Paint Mode</div>
+                        <div><span class="bg-slate-800 px-1 py-0.5 rounded text-white font-mono font-bold mr-1">Mouse</span> Drag to Look</div>
+                        <div><span class="bg-slate-800 px-1 py-0.5 rounded text-white font-mono font-bold mr-1">T</span> Whistle / Ping</div>
+                        <div class="col-span-2"><span class="bg-slate-800 px-1 py-0.5 rounded text-white font-mono font-bold mr-1">Space</span> Lock Pose / Seeker Scan</div>
+                    </div>
+                </div>
+
+                <!-- Custom Skins Panel -->
+                <div class="bg-slate-950/40 p-4 rounded-xl border border-slate-800">
+                    <div class="flex justify-between items-center mb-2">
+                        <label class="block text-xs font-bold text-amber-400 uppercase tracking-widest"><i class="fa-solid fa-gift mr-1"></i> Visor Skins</label>
+                        <span class="text-xs bg-amber-400/10 text-amber-300 font-bold px-2 py-0.5 rounded border border-amber-400/30">
+                            <i class="fa-solid fa-coins mr-1"></i> <span id="ptsDisplay">0</span> PTS
+                        </span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button onclick="equipFace('eyes')" id="faceBtn-eyes" class="bg-slate-900 border border-amber-500 text-[11px] py-1.5 px-2 rounded-lg flex justify-between items-center">
+                            <span>Classic Eyes</span>
+                            <span class="text-[9px] text-emerald-400 font-bold">Equipped</span>
+                        </button>
+                        <button onclick="buyFace('ninja', 500)" id="faceBtn-ninja" class="bg-slate-900 border border-slate-800 text-[11px] py-1.5 px-2 rounded-lg flex justify-between items-center hover:bg-slate-800 transition">
+                            <span>Ninja Mask</span>
+                            <span id="faceCost-ninja" class="text-[9px] text-amber-400">500 pts</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Configurations panel (7 cols) -->
+            <div class="lg:col-span-7 flex flex-col justify-between space-y-6">
+                <!-- Profile Settings -->
+                <div class="bg-slate-950/40 p-4 rounded-xl border border-slate-800 space-y-3">
+                    <h3 class="text-xs font-bold text-purple-400 uppercase tracking-widest"><i class="fa-solid fa-user-gear mr-1"></i> Player Profile</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-[10px] text-slate-400 font-bold mb-1">YOUR NICKNAME</label>
+                            <input type="text" id="playerNickname" class="w-full bg-slate-900 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white focus:outline-none focus:border-purple-500 font-semibold" value="Chameleon_Mecha">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] text-slate-400 font-bold mb-1">NETWORK USER ID</label>
+                            <div class="w-full bg-slate-950/80 border border-slate-800 px-3 py-2 rounded-lg text-[10px] font-mono text-purple-300 break-all h-9 flex items-center select-all" id="profileUserId">
+                                Loading ID...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Game Modes Tab Selector -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2"><i class="fa-solid fa-network-wired mr-1"></i> Match Connection Mode</label>
+                    <div class="grid grid-cols-2 gap-3">
+                        <button onclick="setPlayMode('single')" id="modeBtn-single" class="bg-slate-950 border border-purple-500/80 p-3 rounded-xl hover:bg-slate-800/40 transition flex flex-col items-center text-center">
+                            <i class="fa-solid fa-user text-lg text-purple-400 mb-1"></i>
+                            <span class="text-xs font-bold">Single Player (AI Seeker)</span>
+                        </button>
+                        <button onclick="setPlayMode('multi')" id="modeBtn-multi" class="bg-slate-950 border border-slate-800 p-3 rounded-xl hover:bg-slate-800/40 transition flex flex-col items-center text-center">
+                            <i class="fa-solid fa-users text-lg text-blue-400 mb-1"></i>
+                            <span class="text-xs font-bold">Multiplayer Room</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Single Player Settings (Only visible if Single selected) -->
+                <div id="singleSettings" class="space-y-4">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1.5">Map Arena</label>
+                            <div class="grid grid-cols-3 gap-2">
+                                <button onclick="setMap('mansion')" id="mapBtn-mansion" class="bg-slate-950 border border-purple-500/80 p-2 rounded-lg text-xs font-bold text-center">Mansion</button>
+                                <button onclick="setMap('backrooms')" id="mapBtn-backrooms" class="bg-slate-950 border border-slate-800 p-2 rounded-lg text-xs font-bold text-center">Backrooms</button>
+                                <button onclick="setMap('cyber')" id="mapBtn-cyber" class="bg-slate-950 border border-slate-800 p-2 rounded-lg text-xs font-bold text-center">Neon Grid</button>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1.5">Seeker Level</label>
+                            <div class="grid grid-cols-3 gap-2">
+                                <button onclick="setDifficulty('casual')" id="diffBtn-casual" class="bg-slate-950 border border-slate-800 p-2 rounded-lg text-xs font-bold text-center">Casual</button>
+                                <button onclick="setDifficulty('pro')" id="diffBtn-pro" class="bg-slate-950 border border-purple-500/80 p-2 rounded-lg text-xs font-bold text-center">Pro</button>
+                                <button onclick="setDifficulty('elite')" id="diffBtn-elite" class="bg-slate-950 border border-slate-800 p-2 rounded-lg text-xs font-bold text-center text-red-400">Elite AI</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Multiplayer Settings (Only visible if Multi selected) -->
+                <div id="multiSettings" class="space-y-4 hidden bg-slate-950/40 p-4 rounded-xl border border-slate-800">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="space-y-2">
+                            <label class="block text-[10px] text-slate-400 font-bold uppercase tracking-widest">Connect to Room</label>
+                            <div class="flex gap-2">
+                                <input type="text" id="roomCodeInput" class="bg-slate-900 border border-slate-700 px-3 py-2 rounded-lg text-sm text-center font-bold tracking-widest uppercase w-full focus:outline-none focus:border-blue-500" placeholder="ROOM CODE">
+                                <button onclick="joinRoomByCode()" class="bg-blue-600 hover:bg-blue-500 text-xs font-bold px-4 rounded-lg transition shrink-0">JOIN</button>
+                            </div>
+                            <div class="text-center py-1">
+                                <span class="text-[10px] text-slate-500 font-bold">OR</span>
+                            </div>
+                            <button onclick="createRoom()" class="w-full bg-slate-900 hover:bg-slate-800 border border-slate-700 py-2 rounded-lg text-xs font-bold text-blue-400 transition">
+                                <i class="fa-solid fa-plus mr-1"></i> CREATE NEW ROOM
+                            </button>
+                        </div>
+
+                        <!-- Active Room Dashboard -->
+                        <div class="space-y-2 flex flex-col justify-between">
+                            <div>
+                                <div class="flex justify-between items-center text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+                                    <span>Lobby Status</span>
+                                    <span id="lobbyActiveCode" class="text-blue-400 text-xs font-mono">Not in Room</span>
+                                </div>
+                                <div class="bg-slate-900/60 p-2.5 rounded-lg border border-slate-800/80 min-h-[90px] max-h-[110px] overflow-y-auto text-xs space-y-1.5" id="lobbyPlayersList">
+                                    <span class="text-slate-500 italic block text-center mt-4">Connect to a room to view players...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Role selector in Multiplayer -->
+                    <div class="space-y-2">
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest"><i class="fa-solid fa-shield-halved mr-1"></i> Select Multiplayer Role</label>
+                        <div class="grid grid-cols-2 gap-2 text-xs">
+                            <button onclick="setPlayerRole('hider')" id="roleBtn-hider" class="bg-slate-950 border border-purple-500 p-2.5 rounded-xl flex items-center justify-center gap-2 font-bold">
+                                <i class="fa-solid fa-palette text-purple-400"></i> Chameleon (Hide & Pose)
+                            </button>
+                            <button onclick="setPlayerRole('seeker')" id="roleBtn-seeker" class="bg-slate-950 border border-slate-800 p-2.5 rounded-xl flex items-center justify-center gap-2 font-bold">
+                                <i class="fa-solid fa-eye text-red-400"></i> Hunter Seeker Drone
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Launch Match Action -->
+                <button onclick="startGame()" id="launchMatchBtn" class="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 font-black py-4 rounded-xl transition duration-300 transform hover:scale-[1.01] active:scale-95 shadow-xl shadow-purple-500/20 font-outfit text-xl tracking-wider">
+                    ENTER PREPARATION PHASE <i class="fa-solid fa-circle-play ml-1"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- AUDIO TOGGLE BUTTON (TOP RIGHT) -->
+    <button onclick="toggleMute()" class="absolute top-4 right-4 z-30 bg-slate-900/80 border border-slate-800 p-3 rounded-xl hover:bg-slate-800 text-slate-300 flex items-center justify-center shadow-lg" title="Toggle Mute">
+        <i id="muteIcon" class="fa-solid fa-volume-high text-lg"></i>
+    </button>
+
+    <!-- IN-GAME HUD PANEL -->
+    <div id="hudPanel" class="absolute inset-x-0 top-4 z-20 flex flex-col items-center gap-2 pointer-events-none hidden">
+        <!-- Main stats status bar -->
+        <div class="bg-slate-950/85 backdrop-blur-md border border-slate-800 px-6 py-3 rounded-2xl flex items-center gap-5 md:gap-6 shadow-xl pointer-events-auto">
+            <div class="flex flex-col items-center">
+                <span class="text-[9px] text-slate-400 uppercase tracking-widest font-bold">PHASE</span>
+                <span id="phaseLabel" class="text-emerald-400 font-black font-outfit text-base md:text-lg">PREPARATION</span>
+            </div>
+            
+            <div class="h-8 w-px bg-slate-800"></div>
+
+            <div class="flex flex-col items-center px-1">
+                <span id="timerTitle" class="text-[9px] text-slate-400 uppercase tracking-widest font-bold">PREP TIME</span>
+                <span id="gameTimer" class="text-2xl md:text-3xl font-black font-outfit text-white tabular-nums">45s</span>
+            </div>
+
+            <div class="h-8 w-px bg-slate-800"></div>
+
+            <div class="flex flex-col items-center">
+                <span class="text-[9px] text-slate-400 uppercase tracking-widest font-bold">ROOM CODE</span>
+                <span id="roomLabelHUD" class="text-blue-400 font-black font-outfit text-base md:text-lg uppercase">SOLO</span>
+            </div>
+
+            <div class="h-8 w-px bg-slate-800 font-bold"></div>
+
+            <div class="flex flex-col items-center">
+                <span class="text-[9px] text-slate-400 uppercase tracking-widest font-bold">SCORE</span>
+                <span id="scoreVal" class="text-white font-black font-outfit text-base md:text-lg">0</span>
+            </div>
+        </div>
+
+        <!-- Float alert notifications overlay -->
+        <div id="alertMessage" class="px-5 py-2 rounded-full font-extrabold text-xs md:text-sm pointer-events-none uppercase tracking-wide transition-all scale-0 transform">
+            STAY PERFECTLY STILL!
+        </div>
+    </div>
+
+    <!-- MAIN SUSPICION BAR (SHOWN DURING HUNTER PHASES) -->
+    <div id="suspicionBarContainer" class="absolute top-24 inset-x-0 z-20 flex justify-center pointer-events-none transition duration-300 opacity-0 transform translate-y-[-10px]">
+        <div class="bg-slate-950/90 border border-slate-800 p-3 rounded-2xl w-full max-w-sm pointer-events-auto">
+            <div class="flex justify-between items-center mb-1 text-[11px] font-bold text-slate-400">
+                <span>HUNTER DETECTOR</span>
+                <span id="suspicionPercent" class="text-emerald-400 font-outfit font-bold">0%</span>
+            </div>
+            <div class="w-full bg-slate-800 rounded-full h-3 overflow-hidden border border-slate-700/50 p-[2px]">
+                <div id="suspicionFill" class="bg-gradient-to-r from-emerald-500 via-amber-500 to-red-500 h-full rounded-full transition-all duration-100" style="width: 0%"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CANVAS CONTAINER -->
+    <div id="canvasContainer" class="w-full h-full absolute inset-0 z-0"></div>
+
+    <!-- BOTTOM ACTION DOCK -->
+    <div id="actionDock" class="absolute inset-x-0 bottom-6 z-20 flex justify-center px-4 hidden">
+        <div class="bg-slate-950/95 backdrop-blur-md border border-slate-800/80 p-3 rounded-2xl shadow-2xl flex flex-wrap items-center justify-center gap-3 max-w-4xl w-full">
+            
+            <!-- Chameleon Player Controls -->
+            <div id="hiderControls" class="flex items-center gap-2 flex-wrap">
+                <button onclick="togglePoseLock()" id="lockBtn" class="bg-emerald-600 hover:bg-emerald-500 border border-emerald-500 px-4 py-2.5 rounded-xl font-bold font-outfit text-xs transition-all duration-200 shadow-md flex items-center gap-2 text-white">
+                    <i id="lockIcon" class="fa-solid fa-lock-open"></i> <span id="lockBtnText">LOCK POSE (Space)</span>
+                </button>
+                <button onclick="triggerTaunt()" id="tauntBtn" class="bg-amber-600 hover:bg-amber-500 border border-amber-500 px-4 py-2.5 rounded-xl font-bold font-outfit text-xs transition-all duration-200 shadow-md flex items-center gap-2 text-white">
+                    <i class="fa-solid fa-volume-off"></i> TAUNT / WHISTLE (T)
+                </button>
+                <button onclick="togglePaintMode()" id="paintToggleBtn" class="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 border border-purple-500/50 px-5 py-2.5 rounded-xl font-bold font-outfit text-xs transition-all shadow-lg flex items-center gap-2 text-white">
+                    <i class="fa-solid fa-palette"></i> <span id="paintToggleText">PAINT MENU (F)</span>
+                </button>
+            </div>
+
+            <!-- Drone Player Seeker Controls -->
+            <div id="seekerControls" class="hidden flex items-center gap-2">
+                <button onclick="droneTriggerScan()" class="bg-red-600 hover:bg-red-500 border border-red-500 px-5 py-2.5 rounded-xl font-bold font-outfit text-xs transition-all duration-200 shadow-md flex items-center gap-2 text-white">
+                    <i class="fa-solid fa-circle-radiation text-white"></i> TRIGGER RADAR SCAN (Space)
+                </button>
+                <div class="text-xs bg-slate-900 border border-slate-800 text-slate-400 px-3 py-2 rounded-xl">
+                    <i class="fa-solid fa-gamepad text-red-500 mr-1"></i> WASD: Fly, Shift/Ctrl: Up/Down. Seek the hiding chameleons!
+                </div>
+            </div>
+
+            <!-- Action Tips/Status -->
+            <div id="actionDockHelp" class="text-[11px] text-slate-400 px-3 py-1.5 bg-slate-900 rounded-lg border border-slate-800 flex items-center gap-1.5 w-full md:w-auto">
+                <i class="fa-solid fa-circle-info text-purple-400"></i>
+                <span id="actionDockHint">Align against a matching wall, then paint yourself to blend!</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- FLOATING PAINTING WORKBENCH -->
+    <div id="paintPanel" class="absolute top-28 left-4 z-20 bg-slate-950/95 backdrop-blur-md border border-slate-800/80 p-5 rounded-2xl shadow-2xl max-w-xs w-full flex flex-col gap-3 max-h-[70vh] overflow-y-auto pointer-events-auto transition-all duration-300 transform translate-x-[-350px] opacity-0">
+        
+        <div class="flex justify-between items-center pb-1.5 border-b border-slate-800">
+            <h3 class="font-black font-outfit text-base text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400 flex items-center gap-2">
+                <i class="fa-solid fa-palette"></i> Paint Workbench
+            </h3>
+            <button onclick="togglePaintMode()" class="text-slate-400 hover:text-white transition p-1"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+
+        <!-- Eyedropper sampling tool -->
+        <div class="space-y-1.5">
+            <div class="flex justify-between items-center">
+                <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Eyedropper Tool</label>
+                <span class="text-[9px] text-purple-400 font-semibold bg-purple-400/10 px-1.5 py-0.2 rounded border border-purple-500/20">Click Scene Room</span>
+            </div>
+            <button onclick="toggleEyedropper()" id="eyedropperBtn" class="w-full bg-slate-900 hover:bg-slate-800 border border-slate-700 py-2.5 rounded-xl transition flex items-center justify-center gap-2 text-xs font-bold text-slate-200">
+                <i class="fa-solid fa-eye-dropper text-purple-400 text-base"></i>
+                <span id="eyedropperBtnText">Activate Eyedropper</span>
+            </button>
+        </div>
+
+        <!-- Sample Swatches based on Map -->
+        <div class="space-y-2">
+            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Sample Palette Swatches</label>
+            <div id="swatchList" class="flex flex-wrap gap-2">
+                <!-- Color circles loaded dynamically -->
+            </div>
+        </div>
+
+        <!-- Custom Color Hue Picker -->
+        <div class="space-y-2">
+            <div class="flex justify-between items-center">
+                <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Custom Color</label>
+                <div class="w-5 h-5 rounded-full border border-slate-700" id="colorPreview" style="background-color: #ffffff;"></div>
+            </div>
+            <input type="color" id="htmlColorPicker" class="w-full h-8 rounded-lg cursor-pointer bg-transparent border border-slate-700" value="#ffffff" oninput="onCustomColorPicked(this.value)">
+        </div>
+
+        <!-- Material Properties (Glossy vs Matte) -->
+        <div class="space-y-2 bg-slate-900/60 p-2.5 rounded-xl border border-slate-800">
+            <div>
+                <div class="flex justify-between text-[10px] mb-1 font-semibold">
+                    <span class="text-slate-400">Roughness (Matte)</span>
+                    <span id="roughnessValText" class="text-pink-400">100% Matte</span>
+                </div>
+                <input type="range" id="roughnessSlider" min="0" max="1" step="0.05" value="0.9" class="w-full accent-pink-500" oninput="updateMaterialProperties()">
+            </div>
+            <div>
+                <div class="flex justify-between text-[10px] mb-1 font-semibold">
+                    <span class="text-slate-400">Metalness (Glossy)</span>
+                    <span id="metalnessValText" class="text-pink-400">0% Metal</span>
+                </div>
+                <input type="range" id="metalnessSlider" min="0" max="1" step="0.05" value="0.1" class="w-full accent-pink-500" oninput="updateMaterialProperties()">
+            </div>
+        </div>
+
+        <!-- Selected Body parts target paint -->
+        <div class="space-y-1.5">
+            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Target Body Member</label>
+            <div class="grid grid-cols-2 gap-1 text-[10px] font-bold">
+                <button onclick="setPaintTarget('torso')" id="targetBtn-torso" class="bg-slate-900 border border-purple-500 text-purple-300 py-1.5 px-1 rounded-lg text-center">Torso</button>
+                <button onclick="setPaintTarget('head')" id="targetBtn-head" class="bg-slate-900 border border-slate-800 text-slate-400 py-1.5 px-1 rounded-lg text-center">Head</button>
+                <button onclick="setPaintTarget('arms')" id="targetBtn-arms" class="bg-slate-900 border border-slate-800 text-slate-400 py-1.5 px-1 rounded-lg text-center">Arms</button>
+                <button onclick="setPaintTarget('legs')" id="targetBtn-legs" class="bg-slate-900 border border-slate-800 text-slate-400 py-1.5 px-1 rounded-lg text-center">Legs</button>
+                <button onclick="setPaintTarget('tail')" id="targetBtn-tail" class="bg-slate-900 border border-slate-800 text-slate-400 py-1.5 px-1 rounded-lg text-center">Tail</button>
+                <button onclick="paintEntireBody()" class="bg-purple-600/20 border border-purple-500/50 text-purple-300 py-1.5 px-1 rounded-lg text-center hover:bg-purple-600/40 transition">Paint All</button>
+            </div>
+        </div>
+
+        <!-- Camouflage Poses -->
+        <div class="space-y-1.5">
+            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest"><i class="fa-solid fa-person-falling-burst text-[10px]"></i> Chameleon Poses</label>
+            <div class="grid grid-cols-3 gap-1 text-[10px] font-bold">
+                <button onclick="setPose('standing')" id="poseBtn-standing" class="bg-slate-900 border border-purple-500 text-purple-300 py-1 px-1 rounded-lg text-center truncate">Stand</button>
+                <button onclick="setPose('ball')" id="poseBtn-ball" class="bg-slate-900 border border-slate-800 text-slate-400 py-1 px-1 rounded-lg text-center truncate">Ball</button>
+                <button onclick="setPose('splat')" id="poseBtn-splat" class="bg-slate-900 border border-slate-800 text-slate-400 py-1 px-1 rounded-lg text-center truncate">Splat</button>
+                <button onclick="setPose('flat')" id="poseBtn-flat" class="bg-slate-900 border border-slate-800 text-slate-400 py-1 px-1 rounded-lg text-center truncate font-bold">Flat</button>
+                <button onclick="setPose('pillar')" id="poseBtn-pillar" class="bg-slate-900 border border-slate-800 text-slate-400 py-1 px-1 rounded-lg text-center truncate">Pillar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MATCH END OVERLAY -->
+    <div id="gameEndOverlay" class="absolute inset-0 z-40 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-6 hidden">
+        <div class="max-w-md w-full bg-slate-900 border border-slate-800 p-8 rounded-3xl shadow-3xl text-center space-y-6">
+            <div id="endIconContainer" class="w-20 h-20 rounded-full flex items-center justify-center mx-auto shadow-lg">
+                <!-- Icon injected -->
+            </div>
+            
+            <div>
+                <h1 id="endTitle" class="text-3xl font-extrabold font-outfit text-white mb-2">VICTORY SURVIVED!</h1>
+                <p id="endSubtitle" class="text-slate-400 text-xs leading-relaxed">You completely baffled the Hunter Drone's sensors with master-class camouflage!</p>
+            </div>
+
+            <!-- Match Stats Card -->
+            <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800 grid grid-cols-2 gap-4 text-left text-xs">
+                <div>
+                    <span class="block text-[9px] text-slate-500 font-extrabold tracking-widest">SURVIVAL STATUS</span>
+                    <span id="statTime" class="text-base font-black font-outfit text-white">45s</span>
+                </div>
+                <div>
+                    <span class="block text-[9px] text-slate-500 font-extrabold tracking-widest">CAMO ACCURACY</span>
+                    <span id="statCamo" class="text-base font-black font-outfit text-emerald-400">92% Match</span>
+                </div>
+                <div>
+                    <span class="block text-[9px] text-slate-500 font-extrabold tracking-widest">MATCH ROLE</span>
+                    <span id="statRole" class="text-base font-black font-outfit text-blue-400">Chameleon</span>
+                </div>
+                <div>
+                    <span class="block text-[9px] text-slate-500 font-extrabold tracking-widest">POINTS GAINED</span>
+                    <span id="statPts" class="text-base font-black font-outfit text-purple-400">+1250 pts</span>
+                </div>
+            </div>
+
+            <!-- Action buttons -->
+            <div class="grid grid-cols-2 gap-4 text-sm">
+                <button onclick="restartMatch()" class="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 font-bold py-3 px-4 rounded-xl transition font-outfit">
+                    PLAY AGAIN
+                </button>
+                <button onclick="goToMenu()" class="w-full bg-slate-800 hover:bg-slate-700 font-bold py-3 px-4 rounded-xl transition border border-slate-700 text-slate-300 font-outfit">
+                    MAIN MENU
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- FIREBASE AND GAME ENGINE IMPORTS -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Global variables provided by system context
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'm-chameleon-remake-coop';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+        const customAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        // Firebase instance bindings
+        let db, auth;
+        let localUser = null;
+        let isFirebaseActive = false;
+
+        async function setupFirebase() {
+            if (!firebaseConfig) {
+                console.warn("Firebase configuration was not provided. Defaulting to Single-player fallback.");
+                updateStatusLog("Firebase Unavailable: Single-player only.");
+                return;
+            }
+            try {
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+
+                // Authenticating before database query rules execution
+                if (customAuthToken) {
+                    const credentials = await signInWithCustomToken(auth, customAuthToken);
+                    localUser = credentials.user;
+                } else {
+                    const credentials = await signInAnonymously(auth);
+                    localUser = credentials.user;
+                }
+
+                if (localUser) {
+                    isFirebaseActive = true;
+                    document.getElementById('profileUserId').textContent = localUser.uid;
+                    document.getElementById('profileUserId').title = "Click to select all";
+                    updateStatusLog("Connected to multiplayer network!");
+                }
+            } catch (err) {
+                console.error("Firebase authentication/database loading failure: ", err);
+                updateStatusLog("Authentication failed, single-player fallback.");
+            }
+        }
+
+        // Exposing database variables to non-module scopes
+        window.firebaseDB = () => db;
+        window.firebaseAuth = () => auth;
+        window.getIsFirebaseActive = () => isFirebaseActive;
+        window.getLocalUser = () => localUser;
+        window.getAppId = () => appId;
+
+        // EXPOSE FIRESTORE FUNCTIONS GLOBALLY TO NON-MODULE SCRIPTS
+        window.doc = doc;
+        window.setDoc = setDoc;
+        window.getDoc = getDoc;
+        window.updateDoc = updateDoc;
+        window.deleteDoc = deleteDoc;
+        window.onSnapshot = onSnapshot;
+        window.collection = collection;
+        window.query = query;
+        window.where = where;
+        window.getDocs = getDocs;
+
+        // Initialize connection
+        setupFirebase();
+    </script>
+
+    <script>
+        // Main Game states
+        let state = {
+            points: parseInt(localStorage.getItem('m_chameleon_pts') || '0'),
+            unlockedFaces: JSON.parse(localStorage.getItem('m_chameleon_faces') || '["eyes"]'),
+            currentFace: localStorage.getItem('m_chameleon_face') || 'eyes',
+            map: 'mansion',
+            difficulty: 'pro',
+            phase: 'menu', // menu, prep, hunt, end
+            playMode: 'single', // single, multi
+            roomCode: '',
+            isHost: false,
+            role: 'hider', // hider, seeker
+            prepDuration: 45, 
+            huntDuration: 45, 
+            timer: 45,
+            score: 0,
+            suspicion: 0,
+            isPoseLocked: false,
+            isPaintModeOpen: false,
+            activeColor: '#FFFFFF',
+            roughness: 0.9,
+            metalness: 0.1,
+            paintTarget: 'torso',
+            activePose: 'standing',
+            eyedropperActive: false,
+            nickname: localStorage.getItem('m_chameleon_nick') || 'Chameleon_Mecha',
+            audioActive: false
+        };
+
+        let difficultyMods = {
+            casual: { detectionRate: 0.6, suspicionDecay: 18, ptsMod: 0.5 },
+            pro: { detectionRate: 1.0, suspicionDecay: 12, ptsMod: 1.0 },
+            elite: { detectionRate: 1.5, suspicionDecay: 8, ptsMod: 2.0 }
+        };
+
+        const MapPalettes = {
+            mansion: [
+                { hex: '#88D49E', label: 'Sage Wall' },
+                { hex: '#E07A5F', label: 'Coral Wall' },
+                { hex: '#3D5A80', label: 'Steel Blue Wall' },
+                { hex: '#5D4037', label: 'Wood Mahogany' },
+                { hex: '#F4A261', label: 'Yellow Pillar' },
+                { hex: '#DFD5C6', label: 'Concrete' },
+                { hex: '#2F3E46', label: 'Charcoal box' }
+            ],
+            backrooms: [
+                { hex: '#F4E1A1', label: 'Mono Wall' },
+                { hex: '#D1C7A3', label: 'Ceiling' },
+                { hex: '#A68E65', label: 'Carpet Beige' },
+                { hex: '#6E5D43', label: 'Shadow Zone' },
+                { hex: '#7F8C8D', label: 'Metal Ventilator' }
+            ],
+            cyber: [
+                { hex: '#1C1C24', label: 'Carbon Panel' },
+                { hex: '#FF2A85', label: 'Neon Pink' },
+                { hex: '#00F5FF', label: 'Neon Cyan' },
+                { hex: '#2A2AFF', label: 'Laser Blue' },
+                { hex: '#39FF14', label: 'Terminal Green' }
+            ]
+        };
+
+        // Network synchronization references
+        let activeRoomDocListener = null;
+        let activePlayersCollectionListener = null;
+        let networkPlayersPool = {}; // Sync peer meshes
+        let lastFirestoreSyncTime = 0; // Throttled updates
+
+        // UI references
+        const d_audioModal = document.getElementById('audioConsentModal');
+        const d_mainMenu = document.getElementById('mainMenu');
+        const d_hudPanel = document.getElementById('hudPanel');
+        const d_gameTimer = document.getElementById('gameTimer');
+        const d_phaseLabel = document.getElementById('phaseLabel');
+        const d_scoreVal = document.getElementById('scoreVal');
+        const d_suspicionBarContainer = document.getElementById('suspicionBarContainer');
+        const d_suspicionPercent = document.getElementById('suspicionPercent');
+        const d_suspicionFill = document.getElementById('suspicionFill');
+        const d_actionDock = document.getElementById('actionDock');
+        const d_actionDockHint = document.getElementById('actionDockHint');
+        const d_paintPanel = document.getElementById('paintPanel');
+        const d_colorPreview = document.getElementById('colorPreview');
+        const d_htmlColorPicker = document.getElementById('htmlColorPicker');
+        const d_roughnessValText = document.getElementById('roughnessValText');
+        const d_metalnessValText = document.getElementById('metalnessValText');
+        const d_eyedropperBtn = document.getElementById('eyedropperBtn');
+        const d_eyedropperBtnText = document.getElementById('eyedropperBtnText');
+        const d_lockBtn = document.getElementById('lockBtn');
+        const d_lockBtnText = document.getElementById('lockBtnText');
+        const d_lockIcon = document.getElementById('lockIcon');
+        const d_tauntBtn = document.getElementById('tauntBtn');
+        const d_gameEndOverlay = document.getElementById('gameEndOverlay');
+        const d_endTitle = document.getElementById('endTitle');
+        const d_endSubtitle = document.getElementById('endSubtitle');
+        const d_endIconContainer = document.getElementById('endIconContainer');
+        const d_statTime = document.getElementById('statTime');
+        const d_statCamo = document.getElementById('statCamo');
+        const d_statRole = document.getElementById('statRole');
+        const d_statPts = document.getElementById('statPts');
+        const d_alertMessage = document.getElementById('alertMessage');
+        const d_ptsDisplay = document.getElementById('ptsDisplay');
+
+        // Three.js setups
+        let scene, camera, renderer, clock;
+        let playerGroup, playerMaterials = {};
+        let hunterGroup, hunterLight, hunterCone;
+        let obstacleMeshes = [];
+        let particles = [];
+        let ambientLight, directionalLight;
+        let groundMesh, wallMeshes = [];
+
+        // Camera dynamics
+        let cameraRadius = 8;
+        let cameraTheta = 1.5; 
+        let cameraPhi = 1.2;   
+        let isMouseDown = false;
+        let previousMousePosition = { x: 0, y: 0 };
+
+        // Controller key mappings
+        const keys = {};
+
+        // Pose animation configurations
+        let currentBoneRotations = {};
+        let targetBoneRotations = {};
+
+        // Procedural synth bindings
+        let audioMuted = false;
+        let synths = {};
+
+        function initAudioAndStart() {
+            try {
+                Tone.start();
+
+                synths.click = new Tone.Synth({
+                    oscillator: { type: 'sine' },
+                    envelope: { attack: 0.005, decay: 0.1, sustain: 0.01, release: 0.1 }
+                }).toDestination();
+                synths.click.volume.value = -6;
+
+                synths.whistle = new Tone.MonoSynth({
+                    oscillator: { type: 'sine' },
+                    envelope: { attack: 0.1, decay: 0.3, sustain: 0.8, release: 0.1 },
+                    filter: { Q: 1, type: 'lowpass', frequency: 2000 }
+                }).toDestination();
+                synths.whistle.volume.value = -8;
+
+                synths.spray = new Tone.NoiseSynth({
+                    noise: { type: 'pink' },
+                    envelope: { attack: 0.02, decay: 0.15, sustain: 0.3, release: 0.15 }
+                });
+                const filter = new Tone.Filter(1200, "bandpass").toDestination();
+                synths.spray.connect(filter);
+                synths.spray.volume.value = -12;
+
+                synths.radar = new Tone.Synth({
+                    oscillator: { type: 'sawtooth' },
+                    envelope: { attack: 0.01, decay: 0.08, sustain: 0.0, release: 0.05 }
+                });
+                const radarFilter = new Tone.Filter(400, "lowpass").toDestination();
+                synths.radar.connect(radarFilter);
+                synths.radar.volume.value = -15;
+
+                synths.fail = new Tone.Synth({
+                    oscillator: { type: 'triangle' },
+                    envelope: { attack: 0.05, decay: 0.6, sustain: 0.1, release: 0.3 }
+                }).toDestination();
+                synths.fail.volume.value = -4;
+
+                synths.win = new Tone.PolySynth(Tone.Synth).toDestination();
+                synths.win.volume.value = -8;
+
+                state.audioActive = true;
+                d_audioModal.classList.add('hidden');
+                d_mainMenu.classList.remove('hidden');
+
+                playSfx('click');
+            } catch (e) {
+                console.warn("Synth initialization warning, fallback used", e);
+                d_audioModal.classList.add('hidden');
+                d_mainMenu.classList.remove('hidden');
+            }
+        }
+
+        function playSfx(type) {
+            if (audioMuted || !state.audioActive) return;
+            try {
+                const now = Tone.now();
+                if (type === 'click') {
+                    synths.click.triggerAttackRelease("E5", "16n", now);
+                } else if (type === 'spray') {
+                    synths.spray.triggerAttackRelease(0.12);
+                } else if (type === 'whistle') {
+                    synths.whistle.triggerAttackRelease("C6", "8n", now);
+                    synths.whistle.frequency.setValueAtTime("C6", now);
+                    synths.whistle.frequency.exponentialRampToValueAtTime("F6", now + 0.12);
+                    synths.whistle.frequency.exponentialRampToValueAtTime("D6", now + 0.25);
+                } else if (type === 'radar') {
+                    synths.radar.triggerAttackRelease("A2", "16n", now);
+                } else if (type === 'fail') {
+                    synths.fail.triggerAttackRelease("D2", "2n", now);
+                    synths.fail.frequency.setValueAtTime("D2", now);
+                    synths.fail.frequency.linearRampToValueAtTime("F1", now + 0.6);
+                } else if (type === 'win') {
+                    synths.win.triggerAttackRelease(["C4", "E4", "G4", "C5"], "2n", now);
+                }
+            } catch (err) {}
+        }
+
+        function toggleMute() {
+            audioMuted = !audioMuted;
+            const icon = document.getElementById('muteIcon');
+            if (audioMuted) {
+                icon.className = "fa-solid fa-volume-xmark text-red-500";
+            } else {
+                icon.className = "fa-solid fa-volume-high text-slate-300";
+                playSfx('click');
+            }
+        }
+
+        function updateStatusLog(msg) {
+            const list = document.getElementById('lobbyPlayersList');
+            if (list) {
+                const item = document.createElement('div');
+                item.className = "text-[10px] text-purple-300 font-mono italic";
+                item.textContent = `> ${msg}`;
+                list.appendChild(item);
+                list.scrollTop = list.scrollHeight;
+            }
+        }
+
+        function setPlayMode(mode) {
+            state.playMode = mode;
+            const sPanel = document.getElementById('singleSettings');
+            const mPanel = document.getElementById('multiSettings');
+            
+            if (mode === 'single') {
+                document.getElementById('modeBtn-single').className = "bg-slate-950 border border-purple-500 p-3 rounded-xl flex flex-col items-center text-center";
+                document.getElementById('modeBtn-multi').className = "bg-slate-950 border border-slate-800 p-3 rounded-xl flex flex-col items-center text-center";
+                sPanel.classList.remove('hidden');
+                mPanel.classList.add('hidden');
+                document.getElementById('launchMatchBtn').textContent = "ENTER PREPARATION PHASE";
+            } else {
+                document.getElementById('modeBtn-multi').className = "bg-slate-950 border border-blue-500 p-3 rounded-xl flex flex-col items-center text-center";
+                document.getElementById('modeBtn-single').className = "bg-slate-950 border border-slate-800 p-3 rounded-xl flex flex-col items-center text-center";
+                sPanel.classList.add('hidden');
+                mPanel.classList.remove('hidden');
+                document.getElementById('launchMatchBtn').textContent = "LAUNCH MULTIPLAYER MATCH";
+            }
+            playSfx('click');
+        }
+
+        function setMap(mapId) {
+            state.map = mapId;
+            ['mansion', 'backrooms', 'cyber'].forEach(m => {
+                const btn = document.getElementById(`mapBtn-${m}`);
+                if (btn) {
+                    if (m === mapId) {
+                        btn.classList.add('border-purple-500', 'bg-slate-800/60');
+                        btn.classList.remove('border-slate-800');
+                    } else {
+                        btn.classList.add('border-slate-800');
+                        btn.classList.remove('border-purple-500', 'bg-slate-800/60');
+                    }
+                }
+            });
+            playSfx('click');
+        }
+
+        function setDifficulty(diffId) {
+            state.difficulty = diffId;
+            ['casual', 'pro', 'elite'].forEach(d => {
+                const btn = document.getElementById(`diffBtn-${d}`);
+                if (btn) {
+                    if (d === diffId) {
+                        btn.classList.add('border-purple-500', 'bg-slate-800/60');
+                        btn.classList.remove('border-slate-800');
+                    } else {
+                        btn.classList.add('border-slate-800');
+                        btn.classList.remove('border-purple-500', 'bg-slate-800/60');
+                    }
+                }
+            });
+            playSfx('click');
+        }
+
+        function setPlayerRole(roleId) {
+            state.role = roleId;
+            const hBtn = document.getElementById('roleBtn-hider');
+            const sBtn = document.getElementById('roleBtn-seeker');
+
+            if (roleId === 'hider') {
+                hBtn.className = "bg-slate-950 border border-purple-500 p-2.5 rounded-xl flex items-center justify-center gap-2 font-bold";
+                sBtn.className = "bg-slate-950 border border-slate-800 p-2.5 rounded-xl flex items-center justify-center gap-2 font-bold";
+            } else {
+                sBtn.className = "bg-slate-950 border border-red-500 p-2.5 rounded-xl flex items-center justify-center gap-2 font-bold text-red-400";
+                hBtn.className = "bg-slate-950 border border-slate-800 p-2.5 rounded-xl flex items-center justify-center gap-2 font-bold";
+            }
+            playSfx('click');
+
+            // Send immediate role sync if in a live lobby
+            if (state.playMode === 'multi' && state.roomCode) {
+                syncSelfToFirestore();
+            }
+        }
+
+        function updateUnlocksUI() {
+            d_ptsDisplay.textContent = state.points;
+            ['ninja'].forEach(f => {
+                const btn = document.getElementById(`faceBtn-${f}`);
+                const costSpan = document.getElementById(`faceCost-${f}`);
+                if (btn && costSpan) {
+                    if (state.unlockedFaces.includes(f)) {
+                        if (state.currentFace === f) {
+                            btn.className = "bg-slate-900 border border-amber-500 text-[11px] py-1.5 px-2 rounded-lg flex justify-between items-center";
+                            costSpan.textContent = "Equipped";
+                            costSpan.className = "text-[9px] text-emerald-400 font-bold";
+                        } else {
+                            btn.className = "bg-slate-900 border border-slate-700 text-[11px] py-1.5 px-2 rounded-lg flex justify-between items-center hover:bg-slate-800 cursor-pointer";
+                            costSpan.textContent = "Equip";
+                            costSpan.className = "text-[9px] text-slate-400 font-bold";
+                        }
+                    }
+                }
+            });
+        }
+
+        function buyFace(faceId, cost) {
+            if (state.unlockedFaces.includes(faceId)) {
+                equipFace(faceId);
+                return;
+            }
+            if (state.points >= cost) {
+                state.points -= cost;
+                state.unlockedFaces.push(faceId);
+                localStorage.setItem('m_chameleon_pts', state.points);
+                localStorage.setItem('m_chameleon_faces', JSON.stringify(state.unlockedFaces));
+                equipFace(faceId);
+                playSfx('win');
+            } else {
+                triggerAlertBanner(`NOT ENOUGH POINTS! NEED ${cost} PTS.`, true);
+            }
+        }
+
+        function equipFace(faceId) {
+            state.currentFace = faceId;
+            localStorage.setItem('m_chameleon_face', faceId);
+            updateUnlocksUI();
+            playSfx('click');
+            if (playerGroup) rebuildPlayerFace();
+        }
+
+        function generateRoomCode() {
+            let code = '';
+            const possible = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+            for (let i = 0; i < 4; i++) {
+                code += possible.charAt(Math.floor(Math.random() * possible.length));
+            }
+            return code;
+        }
+
+        async function createRoom() {
+            if (!window.getIsFirebaseActive()) {
+                triggerAlertBanner("MULTIPLAYER NOT CONNECTED!", true);
+                return;
+            }
+            const db = window.firebaseDB();
+            const localUser = window.getLocalUser();
+            const appId = window.getAppId();
+
+            playSfx('click');
+            const code = generateRoomCode();
+            state.roomCode = code;
+            state.isHost = true;
+
+            const nameInput = document.getElementById('playerNickname').value.trim();
+            if (nameInput) state.nickname = nameInput;
+
+            try {
+                // Register room info flatly
+                // Public data collection path: /artifacts/{appId}/public/data/{collectionName} -> rooms
+                const roomDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', code);
+                await setDoc(roomDocRef, {
+                    code: code,
+                    status: 'lobby',
+                    map: state.map,
+                    difficulty: state.difficulty,
+                    hostId: localUser.uid,
+                    timer: state.prepDuration,
+                    droneX: 10, droneY: 3.5, droneZ: 10, droneRotY: 0,
+                    activeSeekerId: '',
+                    createdAt: Date.now()
+                });
+
+                // Join room
+                await subscribeToRoom(code);
+                updateStatusLog(`Room ${code} created successfully!`);
+                document.getElementById('lobbyActiveCode').textContent = code;
+                document.getElementById('roomCodeInput').value = code;
+
+                triggerAlertBanner(`ROOM ${code} CREATED!`);
+            } catch (err) {
+                console.error("Failed creating room: ", err);
+                triggerAlertBanner("FAILED TO CREATE ROOM!", true);
+            }
+        }
+
+        async function joinRoomByCode() {
+            if (!window.getIsFirebaseActive()) {
+                triggerAlertBanner("MULTIPLAYER NOT CONNECTED!", true);
+                return;
+            }
+            const db = window.firebaseDB();
+            const appId = window.getAppId();
+            const code = document.getElementById('roomCodeInput').value.trim().toUpperCase();
+
+            if (!code) {
+                triggerAlertBanner("ENTER A VALID ROOM CODE!", true);
+                return;
+            }
+
+            playSfx('click');
+            updateStatusLog(`Connecting to room ${code}...`);
+
+            try {
+                const roomDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', code);
+                const snap = await getDoc(roomDocRef);
+
+                if (!snap.exists()) {
+                    triggerAlertBanner("ROOM CODE NOT FOUND!", true);
+                    updateStatusLog(`Error: Room ${code} doesn't exist.`);
+                    return;
+                }
+
+                const data = snap.data();
+                state.roomCode = code;
+                state.isHost = (data.hostId === window.getLocalUser().uid);
+                state.map = data.map;
+                state.difficulty = data.difficulty;
+
+                const nameInput = document.getElementById('playerNickname').value.trim();
+                if (nameInput) state.nickname = nameInput;
+
+                await subscribeToRoom(code);
+                document.getElementById('lobbyActiveCode').textContent = code;
+                triggerAlertBanner(`JOINED LOBBY: ${code}`);
+            } catch (err) {
+                console.error("Join room error: ", err);
+                triggerAlertBanner("ERROR JOINING LOBBY", true);
+            }
+        }
+
+        async function subscribeToRoom(code) {
+            const db = window.firebaseDB();
+            const appId = window.getAppId();
+            const localUser = window.getLocalUser();
+
+            // Clean previous listeners
+            if (activeRoomDocListener) activeRoomDocListener();
+            if (activePlayersCollectionListener) activePlayersCollectionListener();
+
+            // 1. Join players list first
+            await syncSelfToFirestore();
+
+            // 2. Listen to room updates
+            const roomDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', code);
+            activeRoomDocListener = onSnapshot(roomDocRef, (snap) => {
+                if (!snap.exists()) return;
+                const rData = snap.data();
+
+                // Host syncing changes down
+                if (!state.isHost) {
+                    state.map = rData.map;
+                    state.difficulty = rData.difficulty;
+                    // Auto transition stages
+                    if (rData.status === 'prep' && state.phase === 'menu') {
+                        startLocalMatchGraphics();
+                    } else if (rData.status === 'hunt' && state.phase === 'prep') {
+                        enterHuntPhase();
+                    } else if (rData.status === 'ended' && state.phase !== 'end') {
+                        endGame(rData.victoryState || false);
+                    }
+                }
+
+                if (state.phase !== 'menu') {
+                    // Update sync timers
+                    state.timer = rData.timer;
+                }
+            }, (err) => {
+                console.error("Room sync failure: ", err);
+            });
+
+            // 3. Listen to player collection changes flatly
+            const playersColRef = collection(db, 'artifacts', appId, 'public', 'data', 'players');
+            activePlayersCollectionListener = onSnapshot(playersColRef, (snap) => {
+                const listContainer = document.getElementById('lobbyPlayersList');
+                if (state.phase === 'menu' && listContainer) {
+                    listContainer.innerHTML = '';
+                }
+
+                let currentOnlinePeers = [];
+
+                snap.forEach(docSnap => {
+                    const p = docSnap.data();
+                    if (p.roomCode === code) {
+                        currentOnlinePeers.push(p);
+
+                        // Render in Lobby panel if we are still at menu
+                        if (state.phase === 'menu' && listContainer) {
+                            const pItem = document.createElement('div');
+                            pItem.className = "flex justify-between items-center py-1 border-b border-slate-800 text-[11px]";
+                            
+                            const hostTag = p.isHost ? '<span class="text-amber-400 font-bold ml-1 text-[9px] bg-amber-400/10 px-1 rounded">[Host]</span>' : '';
+                            const roleIcon = p.role === 'seeker' ? '<i class="fa-solid fa-eye text-red-400 mr-1"></i>' : '<i class="fa-solid fa-palette text-purple-400 mr-1"></i>';
+                            
+                            pItem.innerHTML = `
+                                <span class="font-bold flex items-center">${roleIcon}${p.name} ${hostTag}</span>
+                                <span class="font-mono text-slate-400">${p.id === localUser.uid ? 'YOU' : p.id.substring(0, 5)}</span>
+                            `;
+                            listContainer.appendChild(pItem);
+                        }
+                    }
+                });
+
+                // Handle network player 3D sync if inside live game
+                if (state.phase !== 'menu' && state.phase !== 'end') {
+                    syncNetworkPlayersTo3D(currentOnlinePeers);
+                }
+            }, (err) => {
+                console.error("Player collection snapshot error: ", err);
+            });
+        }
+
+        async function syncSelfToFirestore() {
+            if (!window.getIsFirebaseActive() || !state.roomCode) return;
+            const db = window.firebaseDB();
+            const appId = window.getAppId();
+            const localUser = window.getLocalUser();
+
+            // Prepare player packet
+            const packet = {
+                id: localUser.uid,
+                roomCode: state.roomCode,
+                name: state.nickname,
+                role: state.role,
+                isHost: state.isHost,
+                face: state.currentFace,
+                pose: state.activePose,
+                isPoseLocked: state.isPoseLocked,
+                roughness: state.roughness,
+                metalness: state.metalness,
+                alive: true,
+                score: state.score,
+                suspicion: state.suspicion,
+                lastUpdate: Date.now()
+            };
+
+            // Inject 3D positional coordinates
+            if (playerGroup) {
+                packet.posX = playerGroup.position.x;
+                packet.posY = playerGroup.position.y;
+                packet.posZ = playerGroup.position.z;
+                packet.rotY = playerGroup.rotation.y;
+            } else {
+                packet.posX = 0;
+                packet.posY = 1.2;
+                packet.posZ = 0;
+                packet.rotY = 0;
+            }
+
+            // Inject colors
+            if (playerMaterials.torso) {
+                packet.colorTorso = "#" + playerMaterials.torso.color.getHexString();
+                packet.colorHead = "#" + playerMaterials.head.color.getHexString();
+                packet.colorLeftArm = "#" + playerMaterials.leftArm.color.getHexString();
+                packet.colorRightArm = "#" + playerMaterials.rightArm.color.getHexString();
+                packet.colorLeftLeg = "#" + playerMaterials.leftLeg.color.getHexString();
+                packet.colorRightLeg = "#" + playerMaterials.rightLeg.color.getHexString();
+                packet.colorTail = "#" + playerMaterials.tail.color.getHexString();
+            }
+
+            try {
+                const playerDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'players', localUser.uid);
+                await setDoc(playerDocRef, packet);
+            } catch (err) {
+                console.error("Error writing player sync to Firestore: ", err);
+            }
+        }
+
+        function syncNetworkPlayersTo3D(peers) {
+            const localUser = window.getLocalUser();
+            const activeIds = peers.map(p => p.id);
+
+            // 1. Remove disconnected peer meshes
+            Object.keys(networkPlayersPool).forEach(id => {
+                if (!activeIds.includes(id) || id === localUser.uid) {
+                    removeNetworkPlayer(id);
+                }
+            });
+
+            // 2. Add or update peer meshes
+            peers.forEach(p => {
+                if (p.id === localUser.uid) return; // Skip ourselves
+
+                if (!networkPlayersPool[p.id]) {
+                    createNetworkPlayerMesh(p);
+                } else {
+                    updateNetworkPlayerMesh(p);
+                }
+            });
+        }
+
+        function createNetworkPlayerMesh(p) {
+            const group = new THREE.Group();
+            const mats = {
+                torso: new THREE.MeshStandardMaterial({ color: 0xFFFFFF, roughness: 0.9, metalness: 0.1 }),
+                head: new THREE.MeshStandardMaterial({ color: 0xFFFFFF, roughness: 0.9, metalness: 0.1 }),
+                leftArm: new THREE.MeshStandardMaterial({ color: 0xFFFFFF, roughness: 0.9, metalness: 0.1 }),
+                rightArm: new THREE.MeshStandardMaterial({ color: 0xFFFFFF, roughness: 0.9, metalness: 0.1 }),
+                leftLeg: new THREE.MeshStandardMaterial({ color: 0xFFFFFF, roughness: 0.9, metalness: 0.1 }),
+                rightLeg: new THREE.MeshStandardMaterial({ color: 0xFFFFFF, roughness: 0.9, metalness: 0.1 }),
+                tail: new THREE.MeshStandardMaterial({ color: 0xFFFFFF, roughness: 0.9, metalness: 0.1 })
+            };
+
+            if (p.role === 'hider') {
+                // Build a replica Chameleon
+                const torsoGeo = new THREE.BoxGeometry(0.8, 1.2, 0.6);
+                const torsoMesh = new THREE.Mesh(torsoGeo, mats.torso);
+                torsoMesh.castShadow = true;
+                torsoMesh.receiveShadow = true;
+                group.add(torsoMesh);
+
+                const headGroup = new THREE.Group();
+                headGroup.position.set(0, 0.8, 0);
+                headGroup.name = "player-headGroup";
+
+                const headGeo = new THREE.BoxGeometry(0.7, 0.7, 0.7);
+                const headMesh = new THREE.Mesh(headGeo, mats.head);
+                headMesh.castShadow = true;
+                headGroup.add(headMesh);
+
+                // Add eyes
+                const eyeGeo = new THREE.SphereGeometry(0.18, 8, 8);
+                const lEyeMesh = new THREE.Mesh(eyeGeo, mats.head);
+                lEyeMesh.position.set(-0.35, 0.1, 0.15);
+                headGroup.add(lEyeMesh);
+                const rEyeMesh = new THREE.Mesh(eyeGeo, mats.head);
+                rEyeMesh.position.set(0.35, 0.1, 0.15);
+                headGroup.add(rEyeMesh);
+
+                group.add(headGroup);
+
+                // Add limbs
+                const armGeo = new THREE.BoxGeometry(0.22, 0.9, 0.22);
+                const leftArmGroup = new THREE.Group();
+                leftArmGroup.position.set(-0.55, 0.4, 0);
+                leftArmGroup.name = "player-leftArmGroup";
+                const lArm = new THREE.Mesh(armGeo, mats.leftArm);
+                lArm.position.set(0, -0.3, 0);
+                lArm.castShadow = true;
+                leftArmGroup.add(lArm);
+                group.add(leftArmGroup);
+
+                const rightArmGroup = new THREE.Group();
+                rightArmGroup.position.set(0.55, 0.4, 0);
+                rightArmGroup.name = "player-rightArmGroup";
+                const rArm = new THREE.Mesh(armGeo, mats.rightArm);
+                rArm.position.set(0, -0.3, 0);
+                rArm.castShadow = true;
+                rightArmGroup.add(rArm);
+                group.add(rightArmGroup);
+
+                const legGeo = new THREE.BoxGeometry(0.24, 0.8, 0.24);
+                const leftLegGroup = new THREE.Group();
+                leftLegGroup.position.set(-0.3, -0.6, 0);
+                leftLegGroup.name = "player-leftLegGroup";
+                const lLeg = new THREE.Mesh(legGeo, mats.leftLeg);
+                lLeg.position.set(0, -0.3, 0);
+                lLeg.castShadow = true;
+                leftLegGroup.add(lLeg);
+                group.add(leftLegGroup);
+
+                const rightLegGroup = new THREE.Group();
+                rightLegGroup.position.set(0.3, -0.6, 0);
+                rightLegGroup.name = "player-rightLegGroup";
+                const rLeg = new THREE.Mesh(legGeo, mats.rightLeg);
+                rLeg.position.set(0, -0.3, 0);
+                rLeg.castShadow = true;
+                rightLegGroup.add(rLeg);
+                group.add(rightLegGroup);
+
+                const tailGroup = new THREE.Group();
+                tailGroup.position.set(0, -0.4, -0.3);
+                tailGroup.name = "player-tailGroup";
+                const tailGeo = new THREE.BoxGeometry(0.18, 0.18, 0.6);
+                const tailMesh = new THREE.Mesh(tailGeo, mats.tail);
+                tailMesh.position.set(0, 0, -0.2);
+                tailMesh.castShadow = true;
+                tailGroup.add(tailMesh);
+                group.add(tailGroup);
+            } else {
+                // Render as a Drone!
+                const coreGeo = new THREE.SphereGeometry(0.7, 16, 16);
+                const coreMat = new THREE.MeshStandardMaterial({ color: 0x1f2937, roughness: 0.3, metalness: 0.8 });
+                const coreMesh = new THREE.Mesh(coreGeo, coreMat);
+                coreMesh.castShadow = true;
+                group.add(coreMesh);
+
+                const lensGeo = new THREE.SphereGeometry(0.35, 16, 16);
+                const lensMat = new THREE.MeshBasicMaterial({ color: 0xef4444 });
+                const lensMesh = new THREE.Mesh(lensGeo, lensMat);
+                lensMesh.position.set(0, 0, 0.5);
+                group.add(lensMesh);
+
+                const wingGeo = new THREE.BoxGeometry(1.6, 0.15, 0.25);
+                const wingMat = new THREE.MeshStandardMaterial({ color: 0x4b5563, roughness: 0.4, metalness: 0.9 });
+                const wings = new THREE.Mesh(wingGeo, wingMat);
+                wings.position.set(0, 0.2, 0);
+                group.add(wings);
+            }
+
+            group.position.set(p.posX || 0, p.posY || 1.2, p.posZ || 0);
+            group.rotation.y = p.rotY || 0;
+            scene.add(group);
+
+            // Create Floating HTML DOM label tag
+            const nameplate = document.createElement('div');
+            nameplate.className = "nameplate px-2 py-0.5 rounded text-[10px] font-bold shadow-md select-none border";
+            if (p.role === 'seeker') {
+                nameplate.className += " bg-red-950/90 border-red-500 text-red-300";
+            } else {
+                nameplate.className += " bg-purple-950/90 border-purple-500 text-purple-300";
+            }
+            nameplate.textContent = p.name;
+            document.getElementById('nameplatesContainer').appendChild(nameplate);
+
+            networkPlayersPool[p.id] = {
+                id: p.id,
+                group: group,
+                materials: mats,
+                role: p.role,
+                pose: p.pose || 'standing',
+                nameplateElement: nameplate
+            };
+
+            // Set Initial Colors
+            updateNetworkPlayerMesh(p);
+        }
+
+        function updateNetworkPlayerMesh(p) {
+            const peer = networkPlayersPool[p.id];
+            if (!peer) return;
+
+            // Animate position lerping for smooth replication movement
+            peer.group.position.x = THREE.MathUtils.lerp(peer.group.position.x, p.posX, 0.25);
+            peer.group.position.y = THREE.MathUtils.lerp(peer.group.position.y, p.posY, 0.25);
+            peer.group.position.z = THREE.MathUtils.lerp(peer.group.position.z, p.posZ, 0.25);
+            peer.group.rotation.y = THREE.MathUtils.lerp(peer.group.rotation.y, p.rotY, 0.25);
+
+            peer.role = p.role;
+            peer.pose = p.pose || 'standing';
+
+            if (p.role === 'hider' && p.colorTorso) {
+                // Apply network colors
+                peer.materials.torso.color.set(p.colorTorso);
+                peer.materials.head.color.set(p.colorHead);
+                peer.materials.leftArm.color.set(p.colorLeftArm);
+                peer.materials.rightArm.color.set(p.colorRightArm);
+                peer.materials.leftLeg.color.set(p.colorLeftLeg);
+                peer.materials.rightLeg.color.set(p.colorRightLeg);
+                peer.materials.tail.color.set(p.colorTail);
+
+                // Apply network roughness
+                Object.keys(peer.materials).forEach(k => {
+                    peer.materials[k].roughness = p.roughness || 0.9;
+                    peer.materials[k].metalness = p.metalness || 0.1;
+                });
+
+                // Apply Pose rotations
+                applyNetworkBonesRotations(peer);
+            }
+        }
+
+        function applyNetworkBonesRotations(peer) {
+            let poseRotations = {};
+            if (peer.pose === 'standing') {
+                poseRotations = { lArmZ: 0, rArmZ: 0, lArmX: 0, rArmX: 0, lLegX: 0, rLegX: 0, lLegZ: 0, rLegZ: 0, headRotX: 0 };
+            } else if (peer.pose === 'ball') {
+                poseRotations = { lArmZ: 0.3, rArmZ: -0.3, lArmX: -1.2, rArmX: -1.2, lLegX: -1.3, rLegX: -1.3, lLegZ: 0, rLegZ: 0, headRotX: 0.4 };
+            } else if (peer.pose === 'splat') {
+                poseRotations = { lArmZ: 1.4, rArmZ: -1.4, lArmX: 0.3, rArmX: 0.3, lLegX: 0, rLegX: 0, lLegZ: 0.5, rLegZ: -0.5, headRotX: 0 };
+            } else if (peer.pose === 'flat') {
+                poseRotations = { lArmZ: 0.4, rArmZ: -0.4, lArmX: 1.3, rArmX: 1.3, lLegX: 1.4, rLegX: 1.4, lLegZ: 0, rLegZ: 0, headRotX: -0.3 };
+            } else if (peer.pose === 'pillar') {
+                poseRotations = { lArmZ: 0.08, rArmZ: -0.08, lArmX: 0, rArmX: 0, lLegX: 0, rLegX: 0, lLegZ: 0.05, rLegZ: -0.05, headRotX: 0 };
+            }
+
+            const head = peer.group.getObjectByName("player-headGroup");
+            const lArm = peer.group.getObjectByName("player-leftArmGroup");
+            const rArm = peer.group.getObjectByName("player-rightArmGroup");
+            const lLeg = peer.group.getObjectByName("player-leftLegGroup");
+            const rLeg = peer.group.getObjectByName("player-rightLegGroup");
+
+            if (head && poseRotations.headRotX !== undefined) head.rotation.x = poseRotations.headRotX;
+            if (lArm) { lArm.rotation.z = poseRotations.lArmZ; lArm.rotation.x = poseRotations.lArmX; }
+            if (rArm) { rArm.rotation.z = peer.pose === 'splat' ? -1.4 : poseRotations.rArmZ; rArm.rotation.x = poseRotations.rArmX; }
+            if (lLeg) { lLeg.rotation.x = poseRotations.lLegX; lLeg.rotation.z = poseRotations.lLegZ; }
+            if (rLeg) { rLeg.rotation.x = poseRotations.rLegX; rLeg.rotation.z = poseRotations.rLegZ; }
+        }
+
+        function removeNetworkPlayer(id) {
+            const peer = networkPlayersPool[id];
+            if (!peer) return;
+
+            scene.remove(peer.group);
+            if (peer.nameplateElement) {
+                peer.nameplateElement.remove();
+            }
+            delete networkPlayersPool[id];
+        }
+
+        function init3D() {
+            const container = document.getElementById('canvasContainer');
+            clock = new THREE.Clock();
+
+            scene = new THREE.Scene();
+            scene.fog = new THREE.FogExp2(0x05070c, 0.015);
+
+            camera = new THREE.PerspectiveCamera(60, container.clientWidth / container.clientHeight, 0.1, 1000);
+            updateCameraPosition();
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            container.appendChild(renderer.domElement);
+
+            ambientLight = new THREE.AmbientLight(0xffffff, 0.15);
+            scene.add(ambientLight);
+
+            directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(10, 20, 10);
+            directionalLight.castShadow = true;
+            directionalLight.shadow.mapSize.width = 1024;
+            directionalLight.shadow.mapSize.height = 1024;
+            scene.add(directionalLight);
+
+            window.addEventListener('resize', onWindowResize);
+            container.addEventListener('mousedown', onMouseDown);
+            container.addEventListener('mousemove', onMouseMove);
+            window.addEventListener('mouseup', onMouseUp);
+            container.addEventListener('click', onCanvasClick);
+            
+            // Event bindings
+            window.addEventListener('keydown', (e) => { 
+                keys[e.key] = true; 
+                if (e.key === 'f' || e.key === 'F') togglePaintMode();
+                if (e.key === 't' || e.key === 'T') triggerTaunt();
+                if (e.key === ' ') { 
+                    e.preventDefault(); 
+                    if (state.role === 'seeker') {
+                        droneTriggerScan();
+                    } else {
+                        togglePoseLock(); 
+                    }
+                }
+            });
+            window.addEventListener('keyup', (e) => { keys[e.key] = false; });
+        }
+
+        function onWindowResize() {
+            const container = document.getElementById('canvasContainer');
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        }
+
+        function updateCameraPosition() {
+            if (state.phase === 'menu' || state.phase === 'end') return;
+
+            if (state.role === 'seeker') {
+                // Close cockpit chase cam if playing as the Drone Seeker!
+                if (hunterGroup) {
+                    const targetX = hunterGroup.position.x - Math.sin(cameraTheta) * 4;
+                    const targetY = hunterGroup.position.y + 1.2;
+                    const targetZ = hunterGroup.position.z - Math.cos(cameraTheta) * 4;
+                    
+                    camera.position.x = THREE.MathUtils.lerp(camera.position.x, targetX, 0.15);
+                    camera.position.y = THREE.MathUtils.lerp(camera.position.y, targetY, 0.15);
+                    camera.position.z = THREE.MathUtils.lerp(camera.position.z, targetZ, 0.15);
+                    
+                    const lookTarget = hunterGroup.position.clone().add(new THREE.Vector3(0, -0.2, 2.5).applyQuaternion(hunterGroup.quaternion));
+                    camera.lookAt(lookTarget);
+                }
+            } else if (state.isPaintModeOpen) {
+                // Focus camera tight on local Chameleon player
+                if (playerGroup) {
+                    const targetX = playerGroup.position.x - Math.sin(cameraTheta) * Math.cos(cameraPhi) * 4;
+                    const targetY = playerGroup.position.y + 0.8 + Math.sin(cameraPhi) * 4;
+                    const targetZ = playerGroup.position.z - Math.cos(cameraTheta) * Math.cos(cameraPhi) * 4;
+                    
+                    camera.position.x = THREE.MathUtils.lerp(camera.position.x, targetX, 0.15);
+                    camera.position.y = THREE.MathUtils.lerp(camera.position.y, targetY, 0.15);
+                    camera.position.z = THREE.MathUtils.lerp(camera.position.z, targetZ, 0.15);
+                    
+                    camera.lookAt(playerGroup.position.clone().add(new THREE.Vector3(0, 0.8, 0)));
+                }
+            } else {
+                // Regular active follow camera
+                if (playerGroup) {
+                    const targetX = playerGroup.position.x - Math.sin(cameraTheta) * Math.cos(cameraPhi) * cameraRadius;
+                    const targetY = playerGroup.position.y + Math.sin(cameraPhi) * cameraRadius;
+                    const targetZ = playerGroup.position.z - Math.cos(cameraTheta) * Math.cos(cameraPhi) * cameraRadius;
+                    
+                    camera.position.x = THREE.MathUtils.lerp(camera.position.x, targetX, 0.1);
+                    camera.position.y = THREE.MathUtils.lerp(camera.position.y, targetY, 0.1);
+                    camera.position.z = THREE.MathUtils.lerp(camera.position.z, targetZ, 0.1);
+                    
+                    camera.lookAt(playerGroup.position.clone().add(new THREE.Vector3(0, 0.8, 0)));
+                }
+            }
+        }
+
+        function onMouseDown(event) {
+            isMouseDown = true;
+            previousMousePosition = { x: event.clientX, y: event.clientY };
+        }
+
+        function onMouseMove(event) {
+            if (!isMouseDown) return;
+            const deltaX = event.clientX - previousMousePosition.x;
+            const deltaY = event.clientY - previousMousePosition.y;
+
+            cameraTheta += deltaX * 0.007;
+            cameraPhi -= deltaY * 0.007;
+            cameraPhi = Math.max(0.1, Math.min(Math.PI / 2 - 0.05, cameraPhi));
+
+            previousMousePosition = { x: event.clientX, y: event.clientY };
+        }
+
+        function onMouseUp() { isMouseDown = false; }
+
+        function createRoomObstacles(mapType) {
+            obstacleMeshes.forEach(m => scene.remove(m));
+            obstacleMeshes = [];
+            wallMeshes = [];
+
+            const wallRoughness = 0.95;
+            const wallMetalness = 0.05;
+
+            if (mapType === 'mansion') {
+                scene.background = new THREE.Color(0x0a0c10);
+                scene.fog.color = new THREE.Color(0x0a0c10);
+                ambientLight.color.setHex(0xffffff);
+                ambientLight.intensity = 0.25;
+                directionalLight.color.setHex(0xffeedd);
+
+                setGroundColor('#DFD5C6', wallRoughness, wallMetalness);
+
+                // Adding walls
+                addWall(-15, 0, 10, 0.4, 10, 10, '#88D49E');
+                addWall(0, 0, -15, 30, 10, 0.4, '#E07A5F');
+                addWall(15, 0, 0, 0.4, 10, 30, '#3D5A80');
+                
+                // Add Bookshelves / boxes
+                addObstacle(-5, 1, -5, 2, 2, 2, '#5D4037', 0.6, 0.4);
+                addObstacle(6, 1.5, 4, 3, 3, 3, '#2F3E46', 0.8, 0.2); 
+                addObstacle(-10, 2.5, 3, 1, 5, 3, '#5D4037', 0.9, 0.1); 
+
+                // Elegant pillars
+                addObstacle(8, 5, -8, 1.5, 10, 1.5, '#F4A261', wallRoughness, wallMetalness); 
+                addObstacle(-8, 5, 8, 1.5, 10, 1.5, '#88D49E', wallRoughness, wallMetalness); 
+                
+            } else if (mapType === 'backrooms') {
+                scene.background = new THREE.Color(0x1a1a11);
+                scene.fog.color = new THREE.Color(0x1a1a11);
+                ambientLight.color.setHex(0xffeeaa);
+                ambientLight.intensity = 0.3;
+                directionalLight.color.setHex(0xffffee);
+
+                setGroundColor('#A68E65', 0.99, 0.01); 
+
+                // Add walls
+                addWall(0, 0, -15, 30, 10, 0.4, '#F4E1A1');
+                addWall(-15, 0, 0, 0.4, 10, 30, '#F4E1A1');
+                addWall(15, 0, 0, 0.4, 10, 30, '#D1C7A3');
+
+                // Infinite Yellow Mono Maze Pillars
+                addObstacle(-4, 5, -4, 2, 10, 2, '#F4E1A1', 0.99, 0.0);
+                addObstacle(4, 5, -4, 2, 10, 2, '#F4E1A1', 0.99, 0.0);
+                addObstacle(-4, 5, 4, 2, 10, 2, '#F4E1A1', 0.99, 0.0);
+                addObstacle(4, 5, 4, 2, 10, 2, '#F4E1A1', 0.99, 0.0);
+
+                addObstacle(8, 1, 6, 2.5, 2, 2.5, '#6E5D43', 0.9, 0.1);
+                addObstacle(-8, 1, -8, 2, 2, 2, '#7F8C8D', 0.3, 0.9); 
+
+            } else if (mapType === 'cyber') {
+                scene.background = new THREE.Color(0x020205);
+                scene.fog.color = new THREE.Color(0x020205);
+                ambientLight.color.setHex(0x330055);
+                ambientLight.intensity = 0.4;
+                directionalLight.color.setHex(0xff00bb);
+
+                setGroundColor('#1C1C24', 0.3, 0.9); 
+
+                addWall(0, 0, -15, 30, 10, 0.4, '#1C1C24');
+                addWall(-15, 0, 0, 0.4, 10, 30, '#FF2A85'); 
+                addWall(15, 0, 0, 0.4, 10, 30, '#00F5FF'); 
+
+                // Hologram neon crate systems
+                addObstacle(-6, 1.5, -6, 3, 3, 3, '#2A2AFF', 0.1, 0.9); 
+                addObstacle(6, 1, 6, 2, 2, 2, '#39FF14', 0.2, 0.8); 
+                addObstacle(0, 2.5, 0, 1.5, 5, 1.5, '#FF2A85', 0.1, 0.9); 
+            }
+
+            buildSwatchList();
+        }
+
+        function setGroundColor(hex, roughness, metalness) {
+            if (groundMesh) scene.remove(groundMesh);
+            const geo = new THREE.PlaneGeometry(30, 30);
+            const mat = new THREE.MeshStandardMaterial({
+                color: new THREE.Color(hex),
+                roughness: roughness,
+                metalness: metalness
+            });
+            groundMesh = new THREE.Mesh(geo, mat);
+            groundMesh.rotation.x = -Math.PI / 2;
+            groundMesh.receiveShadow = true;
+            groundMesh.name = "environment-ground";
+            scene.add(groundMesh);
+        }
+
+        function addWall(x, y, z, w, h, d, hex) {
+            const geo = new THREE.BoxGeometry(w, h, d);
+            const mat = new THREE.MeshStandardMaterial({ color: new THREE.Color(hex), roughness: 0.9, metalness: 0.1 });
+            const wall = new THREE.Mesh(geo, mat);
+            wall.position.set(x, y + h/2, z);
+            wall.receiveShadow = true;
+            wall.castShadow = true;
+            wall.name = "environment-wall";
+            scene.add(wall);
+            wallMeshes.push(wall);
+            obstacleMeshes.push(wall);
+        }
+
+        function addObstacle(x, y, z, w, h, d, hex, roughness = 0.9, metalness = 0.1) {
+            const geo = new THREE.BoxGeometry(w, h, d);
+            const mat = new THREE.MeshStandardMaterial({ color: new THREE.Color(hex), roughness: roughness, metalness: metalness });
+            const mesh = new THREE.Mesh(geo, mat);
+            mesh.position.set(x, y, z);
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            mesh.name = "environment-obstacle";
+            scene.add(mesh);
+            obstacleMeshes.push(mesh);
+        }
+
+        function buildSwatchList() {
+            const list = document.getElementById('swatchList');
+            if (!list) return;
+            list.innerHTML = '';
+            const colors = MapPalettes[state.map];
+            colors.forEach(c => {
+                const dot = document.createElement('div');
+                dot.className = "w-7 h-7 rounded-lg cursor-pointer border border-transparent hover:border-white transition shadow-md color-dot";
+                dot.style.backgroundColor = c.hex;
+                dot.title = c.label;
+                dot.onclick = () => {
+                    setActiveColor(c.hex);
+                    playSfx('click');
+                };
+                list.appendChild(dot);
+            });
+        }
+
+        function buildPlayerCharacter() {
+            if (playerGroup) scene.remove(playerGroup);
+
+            // Hide or skip local Chameleon rendering if player is controlling Drone!
+            if (state.role === 'seeker') {
+                playerGroup = null;
+                return;
+            }
+
+            playerGroup = new THREE.Group();
+            playerGroup.position.set(0, 1.2, 0);
+
+            playerMaterials = {
+                torso: new THREE.MeshStandardMaterial({ color: 0xFFFFFF, roughness: 0.9, metalness: 0.1 }),
+                head: new THREE.MeshStandardMaterial({ color: 0xFFFFFF, roughness: 0.9, metalness: 0.1 }),
+                leftArm: new THREE.MeshStandardMaterial({ color: 0xFFFFFF, roughness: 0.9, metalness: 0.1 }),
+                rightArm: new THREE.MeshStandardMaterial({ color: 0xFFFFFF, roughness: 0.9, metalness: 0.1 }),
+                leftLeg: new THREE.MeshStandardMaterial({ color: 0xFFFFFF, roughness: 0.9, metalness: 0.1 }),
+                rightLeg: new THREE.MeshStandardMaterial({ color: 0xFFFFFF, roughness: 0.9, metalness: 0.1 }),
+                tail: new THREE.MeshStandardMaterial({ color: 0xFFFFFF, roughness: 0.9, metalness: 0.1 })
+            };
+
+            const torsoGeo = new THREE.BoxGeometry(0.8, 1.2, 0.6);
+            const torsoMesh = new THREE.Mesh(torsoGeo, playerMaterials.torso);
+            torsoMesh.castShadow = true;
+            torsoMesh.receiveShadow = true;
+            torsoMesh.name = "player-torso";
+            playerGroup.add(torsoMesh);
+
+            const headGroup = new THREE.Group();
+            headGroup.position.set(0, 0.8, 0);
+            headGroup.name = "player-headGroup";
+
+            const headGeo = new THREE.BoxGeometry(0.7, 0.7, 0.7);
+            const headMesh = new THREE.Mesh(headGeo, playerMaterials.head);
+            headMesh.castShadow = true;
+            headMesh.name = "player-head";
+            headGroup.add(headMesh);
+
+            const eyeGeo = new THREE.SphereGeometry(0.18, 8, 8);
+            const eyePupilGeo = new THREE.SphereGeometry(0.08, 8, 8);
+            const pupilMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
+
+            const lEyeMesh = new THREE.Mesh(eyeGeo, playerMaterials.head);
+            lEyeMesh.position.set(-0.35, 0.1, 0.15);
+            lEyeMesh.name = "player-eyeL";
+            const lPupil = new THREE.Mesh(eyePupilGeo, pupilMat);
+            lPupil.position.set(-0.35, 0.1, 0.28);
+            headGroup.add(lEyeMesh);
+            headGroup.add(lPupil);
+
+            const rEyeMesh = new THREE.Mesh(eyeGeo, playerMaterials.head);
+            rEyeMesh.position.set(0.35, 0.1, 0.15);
+            rEyeMesh.name = "player-eyeR";
+            const rPupil = new THREE.Mesh(eyePupilGeo, pupilMat);
+            rPupil.position.set(0.35, 0.1, 0.28);
+            headGroup.add(rEyeMesh);
+            headGroup.add(rPupil);
+
+            playerGroup.add(headGroup);
+            rebuildPlayerFace(headGroup);
+
+            const armGeo = new THREE.BoxGeometry(0.22, 0.9, 0.22);
+            const leftArmGroup = new THREE.Group();
+            leftArmGroup.position.set(-0.55, 0.4, 0);
+            leftArmGroup.name = "player-leftArmGroup";
+            const lArmMesh = new THREE.Mesh(armGeo, playerMaterials.leftArm);
+            lArmMesh.position.set(0, -0.3, 0);
+            lArmMesh.castShadow = true;
+            lArmMesh.name = "player-leftArm";
+            leftArmGroup.add(lArmMesh);
+            playerGroup.add(leftArmGroup);
+
+            const rightArmGroup = new THREE.Group();
+            rightArmGroup.position.set(0.55, 0.4, 0);
+            rightArmGroup.name = "player-rightArmGroup";
+            const rArmMesh = new THREE.Mesh(armGeo, playerMaterials.rightArm);
+            rArmMesh.position.set(0, -0.3, 0);
+            rArmMesh.castShadow = true;
+            rArmMesh.name = "player-rightArm";
+            rightArmGroup.add(rArmMesh);
+            playerGroup.add(rightArmGroup);
+
+            const legGeo = new THREE.BoxGeometry(0.24, 0.8, 0.24);
+            const leftLegGroup = new THREE.Group();
+            leftLegGroup.position.set(-0.3, -0.6, 0);
+            leftLegGroup.name = "player-leftLegGroup";
+            const lLegMesh = new THREE.Mesh(legGeo, playerMaterials.leftLeg);
+            lLegMesh.position.set(0, -0.3, 0);
+            lLegMesh.castShadow = true;
+            lLegMesh.name = "player-leftLeg";
+            leftLegGroup.add(lLegMesh);
+            playerGroup.add(leftLegGroup);
+
+            const rightLegGroup = new THREE.Group();
+            rightLegGroup.position.set(0.3, -0.6, 0);
+            rightLegGroup.name = "player-rightLegGroup";
+            const rLegMesh = new THREE.Mesh(legGeo, playerMaterials.rightLeg);
+            rLegMesh.position.set(0, -0.3, 0);
+            rLegMesh.castShadow = true;
+            rLegMesh.name = "player-rightLeg";
+            rightLegGroup.add(rLegMesh);
+            playerGroup.add(rightLegGroup);
+
+            const tailGroup = new THREE.Group();
+            tailGroup.position.set(0, -0.4, -0.3);
+            tailGroup.name = "player-tailGroup";
+            const tailGeo = new THREE.BoxGeometry(0.18, 0.18, 0.6);
+            const tailMesh = new THREE.Mesh(tailGeo, playerMaterials.tail);
+            tailMesh.position.set(0, 0, -0.2);
+            tailMesh.castShadow = true;
+            tailMesh.name = "player-tail";
+            tailGroup.add(tailMesh);
+            playerGroup.add(tailGroup);
+
+            scene.add(playerGroup);
+
+            currentBoneRotations = { lArmZ: 0, rArmZ: 0, lArmX: 0, rArmX: 0, lLegX: 0, rLegX: 0, lLegZ: 0, rLegZ: 0, torsoY: 1.2, torsoRotX: 0, headRotX: 0 };
+            setPose('standing');
+        }
+
+        function rebuildPlayerFace(headGrp) {
+            if (state.role === 'seeker') return;
+            const hGroup = headGrp || playerGroup.getObjectByName("player-headGroup");
+            if (!hGroup) return;
+
+            const oldVisor = hGroup.getObjectByName("visorDecor");
+            if (oldVisor) hGroup.remove(oldVisor);
+
+            const decorGroup = new THREE.Group();
+            decorGroup.name = "visorDecor";
+
+            if (state.currentFace === 'ninja') {
+                const ninjaGeo = new THREE.BoxGeometry(0.74, 0.18, 0.74);
+                const ninjaMat = new THREE.MeshStandardMaterial({ color: 0x9333ea, roughness: 0.5 });
+                const ninjaBand = new THREE.Mesh(ninjaGeo, ninjaMat);
+                ninjaBand.position.set(0, 0.1, 0);
+                decorGroup.add(ninjaBand);
+            }
+            hGroup.add(decorGroup);
+        }
+
+        function buildHunterDrone() {
+            if (hunterGroup) scene.remove(hunterGroup);
+
+            // Skip rendering double drone if local user is the seeker (local user controlled!)
+            hunterGroup = new THREE.Group();
+            hunterGroup.position.set(10, 3.5, 10);
+
+            const coreGeo = new THREE.SphereGeometry(0.7, 16, 16);
+            const coreMat = new THREE.MeshStandardMaterial({ color: 0x1f2937, roughness: 0.3, metalness: 0.8 });
+            const coreMesh = new THREE.Mesh(coreGeo, coreMat);
+            coreMesh.castShadow = true;
+            hunterGroup.add(coreMesh);
+
+            const lensGeo = new THREE.SphereGeometry(0.35, 16, 16);
+            const lensMat = new THREE.MeshBasicMaterial({ color: 0xef4444 });
+            const lensMesh = new THREE.Mesh(lensGeo, lensMat);
+            lensMesh.position.set(0, 0, 0.5);
+            hunterGroup.add(lensMesh);
+
+            const wingGeo = new THREE.BoxGeometry(1.6, 0.15, 0.25);
+            const wingMat = new THREE.MeshStandardMaterial({ color: 0x4b5563, roughness: 0.4, metalness: 0.9 });
+            const wings = new THREE.Mesh(wingGeo, wingMat);
+            wings.position.set(0, 0.2, 0);
+            hunterGroup.add(wings);
+
+            const jetGeo = new THREE.CylinderGeometry(0.12, 0.12, 0.3, 8);
+            const jetMat = new THREE.MeshBasicMaterial({ color: 0x00d5ff });
+            const lJet = new THREE.Mesh(jetGeo, jetMat);
+            lJet.position.set(-0.8, 0, 0);
+            lJet.rotation.z = Math.PI/2;
+            const rJet = new THREE.Mesh(jetGeo, jetMat);
+            rJet.position.set(0.8, 0, 0);
+            rJet.rotation.z = Math.PI/2;
+            hunterGroup.add(lJet);
+            hunterGroup.add(rJet);
+
+            // Visual cone mapping light
+            const coneGeo = new THREE.ConeGeometry(3.5, 10, 16, 1, true);
+            const coneMat = new THREE.MeshBasicMaterial({
+                color: 0xff0044,
+                transparent: true,
+                opacity: 0.15,
+                side: THREE.DoubleSide
+            });
+            hunterCone = new THREE.Mesh(coneGeo, coneMat);
+            hunterCone.rotation.x = Math.PI / 2;
+            hunterCone.position.set(0, 0, 5);
+            hunterCone.name = "scannerCone";
+            hunterGroup.add(hunterCone);
+
+            hunterLight = new THREE.SpotLight(0xff0044, 4.0, 16, Math.PI / 4, 0.5, 1);
+            hunterLight.position.set(0, 0, 0.2);
+            hunterLight.target = hunterCone;
+            hunterLight.castShadow = true;
+            hunterGroup.add(hunterLight);
+
+            scene.add(hunterGroup);
+
+            hunterGroup.userData = {
+                waypoints: [
+                    new THREE.Vector3(-8, 3.5, -8),
+                    new THREE.Vector3(8, 3.5, -8),
+                    new THREE.Vector3(8, 3.5, 8),
+                    new THREE.Vector3(-8, 3.5, 8),
+                    new THREE.Vector3(0, 3.5, 0)
+                ],
+                currentWaypointIdx: 0,
+                speed: state.difficulty === 'elite' ? 5.0 : state.difficulty === 'pro' ? 3.5 : 2.0,
+                state: 'patrol',
+                searchTimer: 0,
+                targetRotationY: 0,
+                whistleAlertLocation: null
+            };
+        }
+
+        function setPose(poseId) {
+            state.activePose = poseId;
+            
+            ['standing', 'ball', 'splat', 'flat', 'pillar'].forEach(p => {
+                const btn = document.getElementById(`poseBtn-${p}`);
+                if (btn) {
+                    if (p === poseId) {
+                        btn.className = "bg-purple-600/30 border border-purple-500 text-purple-200 py-1 px-1 rounded-lg text-center truncate";
+                    } else {
+                        btn.className = "bg-slate-900 border border-slate-800 text-slate-400 py-1 px-1 rounded-lg text-center truncate hover:border-slate-700 transition";
+                    }
+                }
+            });
+
+            if (poseId === 'standing') {
+                targetBoneRotations = { lArmZ: 0, rArmZ: 0, lArmX: 0, rArmX: 0, lLegX: 0, rLegX: 0, lLegZ: 0, rLegZ: 0, torsoY: 1.2, torsoRotX: 0, headRotX: 0 };
+            } else if (poseId === 'ball') {
+                targetBoneRotations = { lArmZ: 0.3, rArmZ: -0.3, lArmX: -1.2, rArmX: -1.2, lLegX: -1.3, rLegX: -1.3, lLegZ: 0, rLegZ: 0, torsoY: 0.5, torsoRotX: 0.2, headRotX: 0.4 };
+            } else if (poseId === 'splat') {
+                targetBoneRotations = { lArmZ: 1.4, rArmZ: -1.4, lArmX: 0.3, rArmX: 0.3, lLegX: 0, rLegX: 0, lLegZ: 0.5, rLegZ: -0.5, torsoY: 1.2, torsoRotX: 0, headRotX: 0 };
+            } else if (poseId === 'flat') {
+                targetBoneRotations = { lArmZ: 0.4, rArmZ: -0.4, lArmX: 1.3, rArmX: 1.3, lLegX: 1.4, rLegX: 1.4, lLegZ: 0, rLegZ: 0, torsoY: 0.3, torsoRotX: Math.PI / 2, headRotX: -0.3 };
+            } else if (poseId === 'pillar') {
+                targetBoneRotations = { lArmZ: 0.08, rArmZ: -0.08, lArmX: 0, rArmX: 0, lLegX: 0, rLegX: 0, lLegZ: 0.05, rLegZ: -0.05, torsoY: 1.2, torsoRotX: 0, headRotX: 0 };
+            }
+
+            playSfx('click');
+
+            if (state.playMode === 'multi' && state.roomCode) {
+                syncSelfToFirestore();
+            }
+        }
+
+        function interpolatePoses(dt) {
+            Object.keys(targetBoneRotations).forEach(k => {
+                currentBoneRotations[k] = THREE.MathUtils.lerp(currentBoneRotations[k], targetBoneRotations[k], 10 * dt);
+            });
+
+            if (!playerGroup) return;
+
+            const torso = playerGroup.children[0];
+            const headGrp = playerGroup.getObjectByName("player-headGroup");
+            const lArmGrp = playerGroup.getObjectByName("player-leftArmGroup");
+            const rArmGrp = playerGroup.getObjectByName("player-rightArmGroup");
+            const lLegGrp = playerGroup.getObjectByName("player-leftLegGroup");
+            const rLegGrp = playerGroup.getObjectByName("player-rightLegGroup");
+
+            playerGroup.position.y = currentBoneRotations.torsoY;
+            torso.rotation.x = currentBoneRotations.torsoRotX;
+            if (headGrp) headGrp.rotation.x = currentBoneRotations.headRotX;
+
+            if (lArmGrp) { lArmGrp.rotation.z = currentBoneRotations.lArmZ; lArmGrp.rotation.x = currentBoneRotations.lArmX; }
+            if (rArmGrp) { rArmGrp.rotation.z = currentBoneRotations.rArmZ; rArmGrp.rotation.x = currentBoneRotations.rArmX; }
+            if (lLegGrp) { lLegGrp.rotation.x = currentBoneRotations.lLegX; lLegGrp.rotation.z = currentBoneRotations.lLegZ; }
+            if (rLegGrp) { rLegGrp.rotation.x = currentBoneRotations.rLegX; rLegGrp.rotation.z = currentBoneRotations.rLegZ; }
+        }
+
+        function setPaintTarget(targetId) {
+            state.paintTarget = targetId;
+            ['torso', 'head', 'arms', 'legs', 'tail'].forEach(t => {
+                const btn = document.getElementById(`targetBtn-${t}`);
+                if (btn) {
+                    if (t === targetId) {
+                        btn.classList.add('border-purple-500', 'text-purple-300');
+                        btn.classList.remove('border-slate-800', 'text-slate-400');
+                    } else {
+                        btn.classList.add('border-slate-800', 'text-slate-400');
+                        btn.classList.remove('border-purple-500', 'text-purple-300');
+                    }
+                }
+            });
+            playSfx('click');
+        }
+
+        function setActiveColor(hex) {
+            state.activeColor = hex;
+            d_colorPreview.style.backgroundColor = hex;
+            d_htmlColorPicker.value = hex;
+            triggerPaintParticles();
+            playSfx('spray');
+
+            if (state.playMode === 'multi') {
+                syncSelfToFirestore();
+            }
+        }
+
+        function onCustomColorPicked(hex) {
+            state.activeColor = hex;
+            d_colorPreview.style.backgroundColor = hex;
+        }
+
+        function updateMaterialProperties() {
+            state.roughness = parseFloat(document.getElementById('roughnessSlider').value);
+            state.metalness = parseFloat(document.getElementById('metalnessSlider').value);
+
+            d_roughnessValText.textContent = `${Math.round(state.roughness * 100)}% Matte`;
+            d_metalnessValText.textContent = `${Math.round(state.metalness * 100)}% Metal`;
+
+            Object.keys(playerMaterials).forEach(k => {
+                playerMaterials[k].roughness = state.roughness;
+                playerMaterials[k].metalness = state.metalness;
+            });
+
+            if (state.playMode === 'multi') {
+                syncSelfToFirestore();
+            }
+        }
+
+        function paintEntireBody() {
+            Object.keys(playerMaterials).forEach(k => {
+                playerMaterials[k].color.set(state.activeColor);
+                playerMaterials[k].roughness = state.roughness;
+                playerMaterials[k].metalness = state.metalness;
+            });
+            triggerPaintParticles(true);
+            playSfx('spray');
+
+            if (state.playMode === 'multi') {
+                syncSelfToFirestore();
+            }
+        }
+
+        function toggleEyedropper() {
+            state.eyedropperActive = !state.eyedropperActive;
+            if (state.eyedropperActive) {
+                d_eyedropperBtn.classList.add('bg-purple-600', 'border-purple-400');
+                d_eyedropperBtnText.textContent = "Click background...";
+                document.getElementById('canvasContainer').style.cursor = 'crosshair';
+            } else {
+                d_eyedropperBtn.classList.remove('bg-purple-600', 'border-purple-400');
+                d_eyedropperBtnText.textContent = "Activate Eyedropper";
+                document.getElementById('canvasContainer').style.cursor = 'default';
+            }
+            playSfx('click');
+        }
+
+        function onCanvasClick(event) {
+            if (!state.eyedropperActive) {
+                if (state.isPaintModeOpen) {
+                    const rect = renderer.domElement.getBoundingClientRect();
+                    const mouse = new THREE.Vector2(
+                        ((event.clientX - rect.left) / rect.width) * 2 - 1,
+                        -((event.clientY - rect.top) / rect.height) * 2 + 1
+                    );
+
+                    const raycaster = new THREE.Raycaster();
+                    raycaster.setFromCamera(mouse, camera);
+                    const intersects = raycaster.intersectObjects(playerGroup ? playerGroup.children : [], true);
+
+                    if (intersects.length > 0) {
+                        const hitName = intersects[0].object.name;
+                        let targetLimb = null;
+
+                        if (hitName.includes("torso")) targetLimb = "torso";
+                        else if (hitName.includes("head") || hitName.includes("eye")) targetLimb = "head";
+                        else if (hitName.includes("Arm")) targetLimb = "arms";
+                        else if (hitName.includes("Leg")) targetLimb = "legs";
+                        else if (hitName.includes("tail")) targetLimb = "tail";
+
+                        if (targetLimb) {
+                            setPaintTarget(targetLimb);
+                            applyPaintToTarget(targetLimb);
+                        }
+                    }
+                }
+                return;
+            }
+
+            const rect = renderer.domElement.getBoundingClientRect();
+            const mouse = new THREE.Vector2(
+                ((event.clientX - rect.left) / rect.width) * 2 - 1,
+                -((event.clientY - rect.top) / rect.height) * 2 + 1
+            );
+
+            const raycaster = new THREE.Raycaster();
+            raycaster.setFromCamera(mouse, camera);
+
+            const intersects = raycaster.intersectObjects(scene.children, true);
+            for (let inter of intersects) {
+                const name = inter.object.name || "";
+                if (name.includes("player") || name.includes("scanner") || name.includes("visor") || inter.object === hunterCone) {
+                    continue;
+                }
+
+                if (inter.object.material) {
+                    let col = new THREE.Color();
+                    if (Array.isArray(inter.object.material)) {
+                        col.copy(inter.object.material[0].color);
+                    } else {
+                        col.copy(inter.object.material.color);
+                    }
+                    setActiveColor("#" + col.getHexString());
+                    toggleEyedropper();
+                    break;
+                }
+            }
+        }
+
+        function applyPaintToTarget(limb) {
+            if (limb === 'torso') playerMaterials.torso.color.set(state.activeColor);
+            else if (limb === 'head') playerMaterials.head.color.set(state.activeColor);
+            else if (limb === 'arms') { playerMaterials.leftArm.color.set(state.activeColor); playerMaterials.rightArm.color.set(state.activeColor); }
+            else if (limb === 'legs') { playerMaterials.leftLeg.color.set(state.activeColor); playerMaterials.rightLeg.color.set(state.activeColor); }
+            else if (limb === 'tail') playerMaterials.tail.color.set(state.activeColor);
+
+            playSfx('spray');
+            triggerPaintParticles();
+
+            if (state.playMode === 'multi') {
+                syncSelfToFirestore();
+            }
+        }
+
+        function triggerPaintParticles(allOver = false) {
+            if (!playerGroup) return;
+            const origin = playerGroup.position.clone().add(new THREE.Vector3(0, 0.5, 0));
+            const count = allOver ? 30 : 12;
+
+            for (let i = 0; i < count; i++) {
+                const geo = new THREE.BoxGeometry(0.12, 0.12, 0.12);
+                const mat = new THREE.MeshBasicMaterial({ color: new THREE.Color(state.activeColor), transparent: true, opacity: 0.9 });
+                const mesh = new THREE.Mesh(geo, mat);
+                mesh.position.copy(origin).add(new THREE.Vector3(
+                    (Math.random() - 0.5) * 1.0,
+                    (Math.random() - 0.5) * 1.2,
+                    (Math.random() - 0.5) * 1.0
+                ));
+                scene.add(mesh);
+
+                particles.push({
+                    mesh: mesh,
+                    vel: new THREE.Vector3(
+                        (Math.random() - 0.5) * 3,
+                        Math.random() * 3 + 1,
+                        (Math.random() - 0.5) * 3
+                    ),
+                    life: 0.8
+                });
+            }
+        }
+
+        function updateParticles(dt) {
+            for (let i = particles.length - 1; i >= 0; i--) {
+                let p = particles[i];
+                p.mesh.position.addScaledVector(p.vel, dt);
+                p.vel.y -= 9.8 * dt;
+                p.life -= dt;
+                p.mesh.material.opacity = p.life / 0.8;
+
+                if (p.life <= 0) {
+                    scene.remove(p.mesh);
+                    p.mesh.geometry.dispose();
+                    p.mesh.material.dispose();
+                    particles.splice(i, 1);
+                }
+            }
+        }
+
+        function togglePaintMode() {
+            if (state.phase !== 'prep' || state.role === 'seeker') return;
+            state.isPaintModeOpen = !state.isPaintModeOpen;
+            if (state.isPaintModeOpen) {
+                d_paintPanel.classList.remove('translate-x-[-350px]', 'opacity-0');
+                document.getElementById('paintToggleText').textContent = "CLOSE PAINT WORKBENCH (F)";
+                d_actionDockHint.textContent = "Click your 3D limbs directly to paint them, or use the sliders!";
+            } else {
+                d_paintPanel.classList.add('translate-x-[-350px]', 'opacity-0');
+                document.getElementById('paintToggleText').textContent = "OPEN PAINT WORKBENCH (F)";
+                d_actionDockHint.textContent = "Find a wall/crate, align your chameleon, then paint yourself to blend!";
+                if (state.eyedropperActive) toggleEyedropper();
+            }
+            playSfx('click');
+        }
+
+        function togglePoseLock() {
+            state.isPoseLocked = !state.isPoseLocked;
+            if (state.isPoseLocked) {
+                d_lockBtn.className = "bg-red-600 hover:bg-red-500 border border-red-500 px-4 py-2.5 rounded-xl font-bold font-outfit text-xs transition-all shadow-md flex items-center gap-2 text-white";
+                d_lockBtnText.textContent = "UN-LOCK POSE (Space)";
+                d_lockIcon.className = "fa-solid fa-lock";
+                triggerAlertBanner("POSE LOCKED! DO NOT MOVE!");
+            } else {
+                d_lockBtn.className = "bg-emerald-600 hover:bg-emerald-500 border border-emerald-500 px-4 py-2.5 rounded-xl font-bold font-outfit text-xs transition-all shadow-md flex items-center gap-2 text-white";
+                d_lockBtnText.textContent = "LOCK POSE (Space)";
+                d_lockIcon.className = "fa-solid fa-lock-open";
+            }
+            playSfx('click');
+
+            if (state.playMode === 'multi') {
+                syncSelfToFirestore();
+            }
+        }
+
+        function triggerAlertBanner(msg, isUrgent = false) {
+            d_alertMessage.textContent = msg;
+            if (isUrgent) {
+                d_alertMessage.className = "px-5 py-2 rounded-full font-black text-xs md:text-sm pointer-events-none uppercase tracking-wide bg-red-600/90 border border-red-500 text-white scale-100 transition-all duration-300 shadow-lg pulse-red";
+            } else {
+                d_alertMessage.className = "px-5 py-2 rounded-full font-black text-xs md:text-sm pointer-events-none uppercase tracking-wide bg-purple-600/90 border border-purple-500 text-white scale-100 transition-all duration-300 shadow-lg";
+            }
+            setTimeout(() => {
+                d_alertMessage.classList.add('scale-0');
+            }, 3000);
+        }
+
+        function triggerTaunt() {
+            if (state.phase !== 'hunt') return;
+            playSfx('whistle');
+            
+            state.score = Math.max(0, state.score + 50);
+            d_scoreVal.textContent = state.score;
+
+            if (hunterGroup) {
+                hunterGroup.userData.whistleAlertLocation = playerGroup ? playerGroup.position.clone() : new THREE.Vector3();
+                hunterGroup.userData.state = 'alert';
+            }
+
+            triggerAlertBanner("TAUNTED THE SEEKER DRONE! POINTS BOOSTED!", true);
+
+            if (state.playMode === 'multi') {
+                syncSelfToFirestore();
+            }
+        }
+
+        function droneTriggerScan() {
+            if (state.role !== 'seeker' || state.phase !== 'hunt') return;
+            playSfx('radar');
+            triggerAlertBanner("SEEKER RADAR SCAN ACTIVATED!", true);
+
+            // Animate local scan visual burst
+            const scanPulseGeo = new THREE.RingGeometry(0.1, 4.0, 16);
+            const scanPulseMat = new THREE.MeshBasicMaterial({ color: 0xff0044, side: THREE.DoubleSide, transparent: true, opacity: 0.8 });
+            const pulse = new THREE.Mesh(scanPulseGeo, scanPulseMat);
+            pulse.position.copy(hunterGroup.position);
+            pulse.rotation.x = Math.PI / 2;
+            scene.add(pulse);
+
+            const pulseAnim = setInterval(() => {
+                pulse.scale.addScalar(0.25);
+                pulse.material.opacity -= 0.05;
+                if (pulse.material.opacity <= 0) {
+                    clearInterval(pulseAnim);
+                    scene.remove(pulse);
+                }
+            }, 30);
+        }
+
+        function checkCollision(pos) {
+            if (pos.x < -14.4 || pos.x > 14.4 || pos.z < -14.4 || pos.z > 14.4) return true;
+
+            for (let obs of obstacleMeshes) {
+                if (obs === groundMesh) continue;
+                const bbox = new THREE.Box3().setFromObject(obs);
+                const playerBbox = new THREE.Box3(
+                    new THREE.Vector3(pos.x - 0.45, 0, pos.z - 0.45),
+                    new THREE.Vector3(pos.x + 0.45, 2.0, pos.z + 0.45)
+                );
+
+                if (bbox.intersectsBox(playerBbox)) return true;
+            }
+            return false;
+        }
+
+        function evaluateCamouflage() {
+            if (!playerGroup || !hunterGroup) return 100;
+
+            const hunterEye = hunterGroup.position.clone();
+            const playerPos = playerGroup.position.clone().add(new THREE.Vector3(0, 0.6, 0));
+            const direction = new THREE.Vector3().subVectors(playerPos, hunterEye).normalize();
+            
+            const backdropRay = new THREE.Raycaster(playerPos, direction);
+            const intersects = backdropRay.intersectObjects(scene.children, true);
+            
+            let bgHex = "#05070c"; 
+            let bgRoughness = 0.9;
+            let bgMetalness = 0.1;
+
+            for (let inter of intersects) {
+                if (inter.object.name.includes("player") || inter.object.name.includes("visor") || inter.object === hunterCone) {
+                    continue;
+                }
+                if (inter.object.material) {
+                    let col = new THREE.Color();
+                    if (Array.isArray(inter.object.material)) {
+                        col.copy(inter.object.material[0].color);
+                        bgRoughness = inter.object.material[0].roughness || 0.9;
+                        bgMetalness = inter.object.material[0].metalness || 0.1;
+                    } else {
+                        col.copy(inter.object.material.color);
+                        bgRoughness = inter.object.material.roughness || 0.9;
+                        bgMetalness = inter.object.material.metalness || 0.1;
+                    }
+                    bgHex = "#" + col.getHexString();
+                    break;
+                }
+            }
+
+            const bgCol = new THREE.Color(bgHex);
+            let totalColorDist = 0;
+            const parts = Object.keys(playerMaterials);
+            parts.forEach(p => {
+                const partCol = playerMaterials[p].color;
+                const dR = partCol.r - bgCol.r;
+                const dG = partCol.g - bgCol.g;
+                const dB = partCol.b - bgCol.b;
+                totalColorDist += Math.sqrt(dR*dR + dG*dG + dB*dB);
+            });
+            const avgColorDist = totalColorDist / parts.length;
+            let colorCamouflage = Math.max(0, 1.0 - (avgColorDist / 0.7));
+
+            let roughnessPenalty = Math.abs(state.roughness - bgRoughness);
+            let metalnessPenalty = Math.abs(state.metalness - bgMetalness);
+            let materialCamouflage = 1.0 - ((roughnessPenalty + metalnessPenalty) / 2);
+
+            let distToWall = Math.min(
+                Math.abs(playerGroup.position.x - 14.5),
+                Math.abs(playerGroup.position.x + 14.5),
+                Math.abs(playerGroup.position.z - 14.5),
+                Math.abs(playerGroup.position.z + 14.5)
+            );
+
+            let distToCrate = 999;
+            obstacleMeshes.forEach(obs => {
+                if (obs === groundMesh || wallMeshes.includes(obs)) return;
+                let dist = playerGroup.position.distanceTo(obs.position);
+                if (dist < distToCrate) distToCrate = dist;
+            });
+
+            let poseMultiplier = 1.0;
+            if (distToWall < 1.6) {
+                if (state.activePose === 'splat') poseMultiplier = 1.0;
+                else if (state.activePose === 'pillar') poseMultiplier = 0.85;
+                else poseMultiplier = 0.4;
+            } else if (distToCrate < 2.0) {
+                if (state.activePose === 'ball') poseMultiplier = 1.0;
+                else if (state.activePose === 'pillar') poseMultiplier = 0.75;
+                else poseMultiplier = 0.35;
+            } else {
+                if (state.activePose === 'flat') poseMultiplier = 0.95;
+                else if (state.activePose === 'standing') poseMultiplier = 0.1;
+                else poseMultiplier = 0.4;
+            }
+
+            let camScore = Math.round(colorCamouflage * 0.65 * 100 + materialCamouflage * 0.15 * 100 + poseMultiplier * 0.20 * 100);
+            return Math.max(0, Math.min(100, camScore));
+        }
+
+        let beepTimer = 0;
+        function updateHunterAI(dt) {
+            if (!hunterGroup) return;
+
+            const uData = hunterGroup.userData;
+            const dronePos = hunterGroup.position;
+            const pPos = playerGroup ? playerGroup.position : new THREE.Vector3();
+
+            let targetPos = uData.waypoints[uData.currentWaypointIdx];
+            if (uData.state === 'alert' && uData.whistleAlertLocation) {
+                targetPos = uData.whistleAlertLocation;
+            }
+
+            const dir = new THREE.Vector3().subVectors(targetPos, dronePos);
+            dir.y = 0;
+            const dist = dir.length();
+
+            if (dist > 0.5) {
+                dir.normalize();
+                dronePos.addScaledVector(dir, uData.speed * dt);
+                
+                const targetYaw = Math.atan2(dir.x, dir.z);
+                hunterGroup.rotation.y = THREE.MathUtils.lerp(hunterGroup.rotation.y, targetYaw, 5 * dt);
+            } else {
+                if (uData.state === 'alert') {
+                    uData.state = 'search';
+                    uData.searchTimer = 4.0;
+                    uData.whistleAlertLocation = null;
+                } else if (uData.state === 'patrol') {
+                    uData.state = 'search';
+                    uData.searchTimer = 3.0;
+                }
+            }
+
+            if (uData.state === 'search') {
+                uData.searchTimer -= dt;
+                const sweepYaw = Math.sin(clock.getElapsedTime() * 3) * 0.8;
+                hunterGroup.rotation.y += sweepYaw * dt;
+
+                if (uData.searchTimer <= 0) {
+                    uData.state = 'patrol';
+                    uData.currentWaypointIdx = (uData.currentWaypointIdx + 1) % uData.waypoints.length;
+                }
+            }
+
+            // Sync AI coordinates to room database if Host
+            if (state.playMode === 'multi' && state.isHost && window.getIsFirebaseActive()) {
+                const now = Date.now();
+                if (now - lastFirestoreSyncTime > 150) { // Throttle
+                    const db = window.firebaseDB();
+                    const appId = window.getAppId();
+                    updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'rooms', state.roomCode), {
+                        droneX: dronePos.x,
+                        droneY: dronePos.y,
+                        droneZ: dronePos.z,
+                        droneRotY: hunterGroup.rotation.y
+                    });
+                    lastFirestoreSyncTime = now;
+                }
+            }
+
+            if (state.role === 'hider') {
+                const forward = new THREE.Vector3(0, 0, 1).applyQuaternion(hunterGroup.quaternion);
+                const toPlayer = new THREE.Vector3().subVectors(pPos, dronePos);
+                const distToPlayer = toPlayer.length();
+                toPlayer.normalize();
+
+                const dot = forward.dot(toPlayer);
+                const viewAngle = Math.acos(dot);
+
+                const maxScanRange = 14.0;
+                const maxScanAngle = Math.PI / 5;
+
+                let isBeingScanned = false;
+
+                if (distToPlayer < maxScanRange && viewAngle < maxScanAngle) {
+                    isBeingScanned = true;
+
+                    let camoMatch = evaluateCamouflage();
+                    let finalDetectionRate = difficultyMods[state.difficulty].detectionRate;
+
+                    let isMoving = keys['w'] || keys['W'] || keys['s'] || keys['S'] || keys['a'] || keys['A'] || keys['d'] || keys['D'];
+                    if (isMoving && !state.isPoseLocked) {
+                        finalDetectionRate *= 8.0;
+                        triggerAlertBanner("DETECTED BY MOVEMENT!", true);
+                    }
+
+                    if (camoMatch < 65) {
+                        let severity = (65 - camoMatch) / 65;
+                        state.suspicion = Math.min(100, state.suspicion + severity * 28 * finalDetectionRate * dt);
+                    } else {
+                        state.suspicion = Math.max(0, state.suspicion - (camoMatch - 65) * 0.4 * dt);
+                    }
+
+                    hunterCone.material.color.setHex(0xff0000);
+                    hunterCone.material.opacity = 0.35;
+                    hunterLight.color.setHex(0xff0000);
+
+                    beepTimer -= dt;
+                    if (beepTimer <= 0) {
+                        playSfx('radar');
+                        beepTimer = THREE.MathUtils.lerp(0.8, 0.15, state.suspicion / 100);
+                    }
+                } else {
+                    state.suspicion = Math.max(0, state.suspicion - difficultyMods[state.difficulty].suspicionDecay * dt);
+                    hunterCone.material.color.setHex(0xaa5500);
+                    hunterCone.material.opacity = 0.12;
+                    hunterLight.color.setHex(0xffee88);
+                }
+
+                // Sync HUD UI
+                d_suspicionFill.style.width = `${state.suspicion}%`;
+                d_suspicionPercent.textContent = `${Math.round(state.suspicion)}%`;
+
+                if (state.suspicion > 70) {
+                    d_suspicionPercent.className = "text-red-500 font-black animate-pulse font-outfit";
+                } else if (state.suspicion > 35) {
+                    d_suspicionPercent.className = "text-amber-500 font-bold font-outfit";
+                } else {
+                    d_suspicionPercent.className = "text-emerald-500 font-outfit";
+                }
+
+                if (state.suspicion >= 100) {
+                    endGame(false);
+                }
+            }
+        }
+
+        function updateMultiplayerDroneSync(dt) {
+            if (!hunterGroup || state.isHost) return;
+
+            // Non-host players in multi mode pull coordinates from room doc
+            const db = window.firebaseDB();
+            const appId = window.getAppId();
+            
+            getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'rooms', state.roomCode)).then(snap => {
+                if (!snap.exists()) return;
+                const data = snap.data();
+                hunterGroup.position.x = THREE.MathUtils.lerp(hunterGroup.position.x, data.droneX, 0.1);
+                hunterGroup.position.y = THREE.MathUtils.lerp(hunterGroup.position.y, data.droneY, 0.1);
+                hunterGroup.position.z = THREE.MathUtils.lerp(hunterGroup.position.z, data.droneZ, 0.1);
+                hunterGroup.rotation.y = THREE.MathUtils.lerp(hunterGroup.rotation.y, data.droneRotY, 0.1);
+            });
+        }
+
+        function startGame() {
+            if (state.playMode === 'multi' && !state.roomCode) {
+                triggerAlertBanner("CREATE OR JOIN A ROOM FIRST!", true);
+                return;
+            }
+
+            const nicknameInput = document.getElementById('playerNickname').value.trim();
+            if (nicknameInput) state.nickname = nicknameInput;
+
+            if (state.playMode === 'multi' && state.isHost) {
+                const db = window.firebaseDB();
+                const appId = window.getAppId();
+                updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'rooms', state.roomCode), {
+                    status: 'prep',
+                    timer: state.prepDuration
+                }).then(() => {
+                    startLocalMatchGraphics();
+                });
+            } else {
+                startLocalMatchGraphics();
+            }
+        }
+
+        function startLocalMatchGraphics() {
+            state.phase = 'prep';
+            state.timer = state.prepDuration;
+            state.score = 0;
+            state.suspicion = 0;
+            state.isPoseLocked = false;
+            state.isPaintModeOpen = false;
+
+            d_mainMenu.classList.add('hidden');
+            d_hudPanel.classList.remove('hidden');
+            d_actionDock.classList.remove('hidden');
+            d_suspicionBarContainer.classList.add('opacity-0');
+
+            // Setup control visibility panels
+            if (state.role === 'seeker') {
+                document.getElementById('seekerControls').classList.remove('hidden');
+                document.getElementById('hiderControls').classList.add('hidden');
+                document.getElementById('actionDockHint').textContent = "Chase and hunt the other players!";
+            } else {
+                document.getElementById('seekerControls').classList.add('hidden');
+                document.getElementById('hiderControls').classList.remove('hidden');
+                document.getElementById('actionDockHint').textContent = "Find a wall or box, match yourself, and freeze!";
+            }
+
+            document.getElementById('roomLabelHUD').textContent = state.playMode === 'multi' ? state.roomCode : "SOLO";
+
+            // Spawn Room details
+            createRoomObstacles(state.map);
+            buildPlayerCharacter();
+            buildHunterDrone();
+
+            if (state.role === 'hider') {
+                paintEntireBody();
+            }
+
+            triggerAlertBanner("PREPARATION TIME! FIND A POSITION!", false);
+            playSfx('click');
+        }
+
+        function enterHuntPhase() {
+            state.phase = 'hunt';
+            state.timer = state.huntDuration;
+            
+            if (state.isPaintModeOpen) togglePaintMode();
+
+            document.getElementById('timerTitle').textContent = "HUNT TIMEOUT";
+            d_phaseLabel.textContent = "HUNT PHASE";
+            d_phaseLabel.className = "text-red-500 font-black font-outfit text-sm md:text-base pulse-red";
+            
+            if (state.role === 'hider') {
+                d_suspicionBarContainer.classList.remove('opacity-0');
+            }
+
+            triggerAlertBanner("HUNTER RELEASED! BLEND & FREEZE!", true);
+            playSfx('radar');
+
+            if (state.playMode === 'multi' && state.isHost && window.getIsFirebaseActive()) {
+                const db = window.firebaseDB();
+                const appId = window.getAppId();
+                updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'rooms', state.roomCode), {
+                    status: 'hunt',
+                    timer: state.huntDuration
+                });
+            }
+        }
+
+        function updateGameLoop(dt) {
+            if (state.phase === 'menu' || state.phase === 'end') return;
+
+            // Host handles game timing decrements
+            if (state.playMode === 'single' || state.isHost) {
+                state.timer -= dt;
+                if (state.timer <= 0) {
+                    if (state.phase === 'prep') {
+                        enterHuntPhase();
+                    } else if (state.phase === 'hunt') {
+                        endGame(true); 
+                    }
+                }
+
+                // Push timing tick sync
+                if (state.playMode === 'multi' && window.getIsFirebaseActive()) {
+                    const now = Date.now();
+                    if (now - lastFirestoreSyncTime > 800) {
+                        const db = window.firebaseDB();
+                        const appId = window.getAppId();
+                        updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'rooms', state.roomCode), {
+                            timer: state.timer
+                        });
+                        lastFirestoreSyncTime = now;
+                    }
+                }
+            }
+
+            d_gameTimer.textContent = `${Math.ceil(state.timer)}s`;
+
+            if (state.phase === 'hunt' && state.role === 'hider') {
+                let match = evaluateCamouflage();
+                state.score += Math.round(15 * dt * (match / 100));
+                d_scoreVal.textContent = state.score;
+            }
+
+            // A. LOCAL CHAMELEON MOVEMENT (If Hider)
+            if (state.role === 'hider' && playerGroup && !state.isPoseLocked && !state.isPaintModeOpen) {
+                let moveX = 0;
+                let moveZ = 0;
+                if (keys['w'] || keys['W']) moveZ -= 1;
+                if (keys['s'] || keys['S']) moveZ += 1;
+                if (keys['a'] || keys['A']) moveX -= 1;
+                if (keys['d'] || keys['D']) moveX += 1;
+
+                if (moveX !== 0 || moveZ !== 0) {
+                    const camDir = new THREE.Vector3();
+                    camera.getWorldDirection(camDir);
+                    camDir.y = 0;
+                    camDir.normalize();
+
+                    const camRight = new THREE.Vector3();
+                    camRight.crossVectors(camDir, new THREE.Vector3(0, 1, 0)).normalize();
+
+                    const moveDir = new THREE.Vector3()
+                        .addScaledVector(camDir, -moveZ)
+                        .addScaledVector(camRight, moveX)
+                        .normalize();
+
+                    const stepSpeed = 5.5 * dt;
+                    const nextPosition = playerGroup.position.clone().addScaledVector(moveDir, stepSpeed);
+
+                    if (!checkCollision(nextPosition)) {
+                        playerGroup.position.copy(nextPosition);
+
+                        const targetAngle = Math.atan2(moveDir.x, moveDir.z);
+                        playerGroup.rotation.y = THREE.MathUtils.lerp(playerGroup.rotation.y, targetAngle, 12 * dt);
+
+                        const walkBob = Math.sin(clock.getElapsedTime() * 12) * 0.35;
+                        targetBoneRotations.lLegX = walkBob;
+                        targetBoneRotations.rLegX = -walkBob;
+                        targetBoneRotations.lArmX = -walkBob;
+                        targetBoneRotations.rArmX = walkBob;
+                    }
+                } else {
+                    if (state.activePose === 'standing') {
+                        targetBoneRotations.lLegX = 0;
+                        targetBoneRotations.rLegX = 0;
+                        targetBoneRotations.lArmX = 0;
+                        targetBoneRotations.rArmX = 0;
+                    }
+                }
+
+                // Throttle position coordinates upload in multiplayer
+                if (state.playMode === 'multi' && window.getIsFirebaseActive()) {
+                    const now = Date.now();
+                    if (now - lastFirestoreSyncTime > 100) {
+                        syncSelfToFirestore();
+                        lastFirestoreSyncTime = now;
+                    }
+                }
+            }
+
+            // B. LOCAL DRONE MOVEMENT (If Seeker)
+            if (state.role === 'seeker' && hunterGroup) {
+                let flyX = 0;
+                let flyZ = 0;
+                let flyY = 0;
+
+                if (keys['w'] || keys['W']) flyZ += 1;
+                if (keys['s'] || keys['S']) flyZ -= 1;
+                if (keys['a'] || keys['A']) flyX -= 1;
+                if (keys['d'] || keys['D']) flyX += 1;
+                if (keys['Shift']) flyY += 1;
+                if (keys['Control']) flyY -= 1;
+
+                if (flyX !== 0 || flyZ !== 0 || flyY !== 0) {
+                    const camDir = new THREE.Vector3();
+                    camera.getWorldDirection(camDir);
+                    camDir.y = 0;
+                    camDir.normalize();
+
+                    const camRight = new THREE.Vector3();
+                    camRight.crossVectors(camDir, new THREE.Vector3(0, 1, 0)).normalize();
+
+                    const moveDir = new THREE.Vector3()
+                        .addScaledVector(camDir, flyZ)
+                        .addScaledVector(camRight, flyX)
+                        .normalize();
+
+                    moveDir.y = flyY * 0.8;
+
+                    const flySpeed = 6.0 * dt;
+                    const nextPosition = hunterGroup.position.clone().addScaledVector(moveDir, flySpeed);
+
+                    // Clamp bounds
+                    nextPosition.x = Math.max(-14.5, Math.min(14.5, nextPosition.x));
+                    nextPosition.y = Math.max(1.5, Math.min(8.0, nextPosition.y));
+                    nextPosition.z = Math.max(-14.5, Math.min(14.5, nextPosition.z));
+
+                    hunterGroup.position.copy(nextPosition);
+
+                    // Align look target yaw rotation
+                    hunterGroup.rotation.y = cameraTheta;
+                }
+
+                // Send positions
+                if (state.playMode === 'multi' && window.getIsFirebaseActive()) {
+                    const now = Date.now();
+                    if (now - lastFirestoreSyncTime > 100) {
+                        syncSelfToFirestore();
+                        lastFirestoreSyncTime = now;
+                    }
+                }
+            }
+
+            // Intersect bones
+            interpolatePoses(dt);
+
+            // Seeker updates
+            if (state.playMode === 'single') {
+                updateHunterAI(dt);
+            } else {
+                if (state.isHost) {
+                    // Update AI path drone
+                    updateHunterAI(dt);
+                } else {
+                    // Pull remote drone coordinates
+                    updateMultiplayerDroneSync(dt);
+                }
+            }
+
+            // Update Nameplate alignments
+            updateNameplatesProjection();
+        }
+
+        function updateNameplatesProjection() {
+            const container = document.getElementById('nameplatesContainer');
+            if (!container) return;
+
+            Object.keys(networkPlayersPool).forEach(id => {
+                const peer = networkPlayersPool[id];
+                const element = peer.nameplateElement;
+                if (!element) return;
+
+                // Projection setup
+                const tempV = new THREE.Vector3();
+                peer.group.getWorldPosition(tempV);
+                tempV.y += (peer.role === 'seeker' ? 0.9 : 1.3); // Altitude above models
+
+                // Project to NDC space
+                tempV.project(camera);
+
+                // Is model behind camera check
+                if (tempV.z > 1) {
+                    element.style.opacity = 0;
+                    return;
+                }
+
+                const x = (tempV.x *  .5 + .5) * window.innerWidth;
+                const y = (tempV.y * -.5 + .5) * window.innerHeight;
+
+                element.style.opacity = 1;
+                element.style.left = `${x}px`;
+                element.style.top = `${y}px`;
+            });
+        }
+
+        function endGame(isVictory) {
+            state.phase = 'end';
+            
+            d_hudPanel.classList.add('hidden');
+            d_actionDock.classList.add('hidden');
+            d_paintPanel.classList.add('translate-x-[-350px]', 'opacity-0');
+            d_gameEndOverlay.classList.remove('hidden');
+
+            const accuracy = evaluateCamouflage();
+
+            if (isVictory) {
+                let gain = Math.round(state.score * 0.5) || 500;
+                state.points += gain;
+                localStorage.setItem('m_chameleon_pts', state.points);
+
+                d_endTitle.textContent = "VICTORY SURVIVED!";
+                d_endSubtitle.textContent = "You successfully matched the environment backgrounds to outsmart surveillance scan sweeps!";
+                d_endIconContainer.className = "w-20 h-20 rounded-full flex items-center justify-center mx-auto shadow-lg bg-emerald-600/20 border border-emerald-500/50 text-emerald-400";
+                d_endIconContainer.innerHTML = '<i class="fa-solid fa-trophy text-4xl"></i>';
+
+                d_statTime.textContent = "Survived";
+                d_statCamo.textContent = `${accuracy}% Match`;
+                d_statCamo.className = "text-base font-black font-outfit text-emerald-400";
+                d_statRole.textContent = state.role === 'seeker' ? 'Seeker Drone' : 'Chameleon';
+                d_statPts.textContent = `+${gain} PTS`;
+
+                playSfx('win');
+            } else {
+                d_endTitle.textContent = "DETECTED & CAUGHT!";
+                d_endSubtitle.textContent = "Visual systems successfully recognized your metallic outline joints under scan sweeps!";
+                d_endIconContainer.className = "w-20 h-20 rounded-full flex items-center justify-center mx-auto shadow-lg bg-red-600/20 border border-red-500/50 text-red-500 animate-bounce";
+                d_endIconContainer.innerHTML = '<i class="fa-solid fa-circle-exclamation text-4xl"></i>';
+
+                d_statTime.textContent = "Caught";
+                d_statCamo.textContent = `${accuracy}% Match`;
+                d_statCamo.className = "text-base font-black font-outfit text-red-400";
+                d_statRole.textContent = state.role === 'seeker' ? 'Seeker Drone' : 'Chameleon';
+                d_statPts.textContent = `+0 PTS`;
+
+                playSfx('fail');
+            }
+
+            updateUnlocksUI();
+
+            if (state.playMode === 'multi' && state.isHost && window.getIsFirebaseActive()) {
+                const db = window.firebaseDB();
+                const appId = window.getAppId();
+                updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'rooms', state.roomCode), {
+                    status: 'ended',
+                    victoryState: isVictory
+                });
+            }
+        }
+
+        function restartMatch() {
+            d_gameEndOverlay.classList.add('hidden');
+            startGame();
+        }
+
+        function goToMenu() {
+            d_gameEndOverlay.classList.add('hidden');
+            d_mainMenu.classList.remove('hidden');
+            state.phase = 'menu';
+
+            // Clean network meshes
+            Object.keys(networkPlayersPool).forEach(id => {
+                removeNetworkPlayer(id);
+            });
+
+            updateUnlocksUI();
+            playSfx('click');
+        }
+
+        window.onload = function() {
+            init3D();
+            buildPlayerCharacter();
+            updateUnlocksUI();
+
+            function animate() {
+                requestAnimationFrame(animate);
+
+                const dt = Math.min(0.03, clock.getDelta());
+                
+                updateGameLoop(dt);
+                updateParticles(dt);
+                updateCameraPosition();
+
+                renderer.render(scene, camera);
+            }
+            animate();
+        };
+    </script>
+</body>
+</html>

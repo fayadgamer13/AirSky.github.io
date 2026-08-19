@@ -1,0 +1,22 @@
+<html>
+  <head>
+    <script src="adSense.js"></script>
+    
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>Leader Strike Unblocked - ClassRoom6x</title>
+    <meta name="website" content="ucbg.github.io" />
+    <link rel="shortcut icon" href="style/favicon.ico">
+    <link rel="stylesheet" href="style/style.css">
+	<script src="UnityLoader.js"></script>
+    <script src="UnityProgress.js"></script>
+    <script>
+      var gameInstance = UnityLoader.instantiate("gameContainer", "build.json", {onProgress: UnityProgress,Module:{onRuntimeInitialized: function() {UnityProgress(gameInstance, "complete")}}});
+    </script>
+  </head>
+  <body style="overflow:hidden; margin:0; padding:0;">
+    <div class="webgl-content">
+      <div id="gameContainer" style="width: 100%; height: 100%; margin: auto;"></div>
+    </div>
+  </body>
+</html>

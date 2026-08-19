@@ -1,0 +1,56 @@
+/*--------------------------------------------------------------
+16. Video Block
+----------------------------------------------------------------*/
+.cs-video_block.cs-style1 {
+  display: block;
+  position: relative;
+  height: 480px;
+  border-radius: 15px;
+  overflow: hidden;
+  background: linear-gradient(116.85deg, rgba(252, 70, 107, 0.5) 0%, rgba(63, 94, 251, 0.5) 100%);
+  padding: 1px;
+  .cs-video_block_in {
+    position: relative;
+    height: 100%;
+    width: 100%;
+    border-radius: inherit;
+    overflow: hidden;
+  }
+  .cs-video_block_bg {
+    height: 100%;
+    width: 100%;
+    position: relative;
+    border-radius: inherit;
+    &::before {
+      content: '';
+      position: absolute;
+      height: 100%;
+      width: 100%;
+      left: 0;
+      top: 0;
+      background-color: rgba($black, 0.5);
+      border-radius: inherit;
+    }
+  }
+  .cs-play_btn {
+    position: absolute;
+    z-index: 2;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #fff;
+    height: 100px;
+    width: 100px;
+    background-color: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    transition: all 0.3s ease;
+    svg {
+      width: 24px;
+    }
+  }
+  &:hover {
+    .cs-play_btn {
+      background-color: rgba(255, 255, 255, 0.25);
+    }
+  }
+}

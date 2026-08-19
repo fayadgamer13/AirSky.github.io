@@ -1,0 +1,39 @@
+/*--------------------------------------------------------------
+2. Preloader
+----------------------------------------------------------------*/
+.cs-preloader {
+  position: fixed;
+  z-index: 99999;
+  top: 0;
+  width: 100%;
+  height: 100vh;
+  background: #080326;
+  flex-direction: column;
+}
+.cs-preloader_in {
+  background: linear-gradient(116.85deg, #FC466B 0%, #3F5EFB 100%);
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  left: 0;
+  top: 0;
+  animation: spin 0.5s ease-in-out infinite;
+}
+
+.cs-preloader span {
+  font-weight: 600;
+  left: 50%;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  margin-top: 12px;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
+}
