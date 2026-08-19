@@ -1,0 +1,1394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Box Dude's Vintage Tetris</title>
+  <style>
+    @import url("https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap");
+
+    :root {
+      --tetris-cyan: #39ff14;
+      --bg-dark: #080808;
+      --panel-bg: #121212;
+      --grid-line: #222222;
+      --text-glow: 0 0 5px rgba(57, 255, 20, 0.8);
+    }
+
+    body {
+      margin: 0;
+      padding: 20px;
+      min-height: 100vh;
+      background: var(--bg-dark);
+      color: #e1e1e1;
+      font-family: "Press Start 2P", monospace;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background-image: linear-gradient(rgba(0, 0, 0, 0.97), rgba(0, 0, 0, 0.97)),
+        repeating-linear-gradient(
+          0deg,
+          transparent,
+          transparent 2px,
+          rgba(57, 255, 20, 0.04) 2px,
+          rgba(57, 255, 20, 0.04) 4px
+        );
+      overflow-x: hidden;
+    }
+
+    .game-title {
+      font-size: 24px;
+      margin-bottom: 20px;
+      color: var(--tetris-cyan);
+      text-shadow: var(--text-glow);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
+    .crt {
+      position: relative;
+      width: fit-content;
+      overflow: hidden;
+    }
+
+    .crt::before {
+      content: " ";
+      display: block;
+      position: absolute;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      right: 0;
+      background: linear-gradient(
+          rgba(18, 16, 16, 0) 50%,
+          rgba(0, 0, 0, 0.25) 50%
+        ),
+        linear-gradient(
+          90deg,
+          rgba(255, 0, 0, 0.06),
+          rgba(0, 255, 0, 0.02),
+          rgba(0, 0, 255, 0.06)
+        );
+      z-index: 2;
+      background-size: 100% 2px, 3px 100%;
+      pointer-events: none;
+    }
+
+    .crt::after {
+      content: " ";
+      display: block;
+      position: absolute;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      right: 0;
+      background: rgba(18, 16, 16, 0.1);
+      opacity: 0;
+      z-index: 2;
+      pointer-events: none;
+      animation: flicker 0.15s infinite;
+    }
+
+    @keyframes flicker {
+      0% { opacity: 0.27861; }
+      5% { opacity: 0.34769; }
+      10% { opacity: 0.23604; }
+      15% { opacity: 0.90626; }
+      20% { opacity: 0.18128; }
+      25% { opacity: 0.83891; }
+      30% { opacity: 0.65583; }
+      35% { opacity: 0.67807; }
+      40% { opacity: 0.26559; }
+      45% { opacity: 0.84693; }
+      50% { opacity: 0.96019; }
+      55% { opacity: 0.08594; }
+      60% { opacity: 0.20313; }
+      65% { opacity: 0.71988; }
+      70% { opacity: 0.53455; }
+      75% { opacity: 0.37288; }
+      80% { opacity: 0.71428; }
+      85% { opacity: 0.70419; }
+      90% { opacity: 0.7003; }
+      95% { opacity: 0.36108; }
+      100% { opacity: 0.24387; }
+    }
+
+    .game-container {
+      display: flex;
+      gap: 20px;
+      align-items: flex-start;
+      margin-bottom: 30px;
+      position: relative;
+    }
+
+    .side-container {
+      display: flex;
+      flex-direction: column;
+      gap: 30px;
+    }
+
+    .preview-container,
+    .hold-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 15px;
+      background: var(--panel-bg);
+      border: 2px solid var(--tetris-cyan);
+      box-shadow: 0 0 15px rgba(57, 255, 20, 0.3),
+        inset 0 0 10px rgba(57, 255, 20, 0.1);
+      border-radius: 4px;
+    }
+
+    .preview-label,
+    .hold-label {
+      color: var(--tetris-cyan);
+      margin-bottom: 15px;
+      font-size: 12px;
+      text-transform: uppercase;
+      text-shadow: var(--text-glow);
+      letter-spacing: 1px;
+    }
+
+    canvas {
+      image-rendering: pixelated;
+      border: 4px solid var(--tetris-cyan);
+      box-shadow: 0 0 20px rgba(57, 255, 20, 0.3),
+        inset 0 0 10px rgba(57, 255, 20, 0.1);
+      border-radius: 4px;
+      background-image: linear-gradient(
+          rgba(0, 0, 0, 0.9),
+          rgba(0, 0, 0, 0.9)
+        ),
+        repeating-linear-gradient(
+          0deg,
+          transparent,
+          transparent 20px,
+          var(--grid-line) 20px,
+          var(--grid-line) 21px
+        ),
+        repeating-linear-gradient(
+          90deg,
+          transparent,
+          transparent 20px,
+          var(--grid-line) 20px,
+          var(--grid-line) 21px
+        );
+    }
+
+    #preview,
+    #hold {
+      background: var(--bg-dark);
+      border-width: 2px;
+    }
+
+    #stats {
+      display: flex;
+      justify-content: space-between;
+      flex-direction: column;
+      align-items: center;
+      width: 140px;
+      max-width: 240px;
+      margin: 20px 0;
+      padding: 15px;
+      background: var(--panel-bg);
+      border: 2px solid var(--tetris-cyan);
+      border-radius: 4px;
+      box-shadow: 0 0 15px rgba(57, 255, 20, 0.3),
+        inset 0 0 10px rgba(57, 255, 20, 0.1);
+    }
+
+    #score,
+    #level {
+      font-size: 14px;
+      color: var(--tetris-cyan);
+      text-shadow: var(--text-glow);
+    }
+
+    #controls {
+      margin-top: -5px;
+      padding: 15px;
+      background: var(--panel-bg);
+      border: 2px solid var(--tetris-cyan);
+      border-radius: 4px;
+      font-size: 10px;
+      line-height: 1.8;
+      text-align: center;
+      color: var(--tetris-cyan);
+      text-shadow: var(--text-glow);
+      box-shadow: 0 0 15px rgba(57, 255, 20, 0.3),
+        inset 0 0 10px rgba(57, 255, 20, 0.1);
+      letter-spacing: 1px;
+    }
+
+    .control-title {
+      font-size: 12px;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+    }
+
+    .scan-line {
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      top: 0;
+      left: 0;
+      background: linear-gradient(
+        to bottom,
+        rgba(255, 255, 255, 0) 0%,
+        rgba(255, 255, 255, 0) 50%,
+        rgba(57, 255, 20, 0.08) 50%,
+        rgba(57, 255, 20, 0.08) 100%
+      );
+      background-size: 100% 4px;
+      z-index: 10;
+      pointer-events: none;
+      animation: scanlines 0.5s linear infinite;
+    }
+
+    @keyframes scanlines {
+      0% { transform: translateY(0); }
+      100% { transform: translateY(4px); }
+    }
+
+    @keyframes pulse {
+      0% {
+        box-shadow: 0 0 15px rgba(57, 255, 20, 0.3),
+          inset 0 0 10px rgba(57, 255, 20, 0.1);
+      }
+      50% {
+        box-shadow: 0 0 25px rgba(57, 255, 20, 0.5),
+          inset 0 0 15px rgba(57, 255, 20, 0.2);
+      }
+      100% {
+        box-shadow: 0 0 15px rgba(57, 255, 20, 0.3),
+          inset 0 0 10px rgba(57, 255, 20, 0.1);
+      }
+    }
+
+    .pulse {
+      animation: pulse 2s infinite;
+    }
+
+    .boot-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: var(--bg-dark);
+      color: var(--tetris-cyan);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      font-family: "Press Start 2P", monospace;
+      z-index: 9999;
+    }
+
+    .high-score {
+      font-size: 10px;
+      color: var(--tetris-cyan);
+      text-shadow: var(--text-glow);
+      box-shadow: 0 0 15px rgba(57, 255, 20, 0.3), inset 0 0 10px rgba(57, 255, 20, 0.1);
+      padding: 5px;
+      display: inline-block; 
+      height: auto;
+      margin-top: 10px;
+      border: 2px solid var(--tetris-cyan);
+      border-radius: 5px;
+      background-color: rgba(0, 0, 0, 0.5);
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <h1 class="game-title">Box Dude's Tetris</h1>
+
+  <div id="stats">
+    <div id="score">SCORE:0</div>
+    <div id="level">LEVEL:1</div>
+  </div>
+
+  <div id="high-score" class="high-score">HIGH SCORE:0</div>
+
+  <div class="crt game-container">
+    <div class="hold-container pulse">
+      <div class="hold-label">HOLD</div>
+      <canvas id="hold" width="100" height="100"></canvas>
+    </div>
+
+    <canvas id="tetris" width="240" height="400"></canvas>
+
+    <div class="side-container">
+      <div class="preview-container pulse">
+        <div class="preview-label">NEXT</div>
+        <canvas id="preview" width="100" height="100"></canvas>
+      </div>
+    </div>
+    <div class="scan-line"></div>
+  </div>
+
+  <div id="controls">
+    <div class="control-title">Controls</div>
+    ← → : Move<br />
+    ↑ : Rotate<br />
+    ↓ : Drop<br />
+    SPACE : Hard Drop<br />
+    SHIFT : Hold<br />
+    P : Pause/Resume
+  </div>
+
+  <!-- Boot overlay -->
+  <div id="bootOverlay" class="boot-overlay">
+    <p id="bootText"></p>
+  </div>
+
+  <script>
+    // Global AudioContext
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+    const canvas = document.getElementById("tetris");
+    const context = canvas.getContext("2d");
+    const previewCanvas = document.getElementById("preview");
+    const previewContext = previewCanvas.getContext("2d");
+    const holdCanvas = document.getElementById("hold");
+    const holdContext = holdCanvas.getContext("2d");
+    const scoreElement = document.getElementById("score");
+    const levelElement = document.getElementById("level");
+    const blockSize = 20;
+    const cols = canvas.width / blockSize;
+    const rows = canvas.height / blockSize;
+    let score = 0;
+    let level = 1;
+    let linesCleared = 0;
+    let canHold = true;
+
+    // Disable image smoothing for a crisp, retro look
+    context.imageSmoothingEnabled = false;
+    previewContext.imageSmoothingEnabled = false;
+    holdContext.imageSmoothingEnabled = false;
+
+    // Play vintage startup sound using the global audioContext
+    function playStartupSound() {
+      const gainNode = audioContext.createGain();
+      gainNode.connect(audioContext.destination);
+      gainNode.gain.value = 0.05;
+
+      const playTone = (freq, duration, delay = 0) => {
+        const oscillator = audioContext.createOscillator();
+        oscillator.type = "square";
+        oscillator.frequency.setValueAtTime(
+          freq,
+          audioContext.currentTime + delay
+        );
+        oscillator.connect(gainNode);
+        oscillator.start(audioContext.currentTime + delay);
+        oscillator.stop(audioContext.currentTime + delay + duration);
+      };
+
+      // Startup melody
+      playTone(392, 0.1); // G4
+      playTone(523.25, 0.1, 0.1); // C5
+      playTone(659.25, 0.15, 0.2); // E5
+      playTone(783.99, 0.3, 0.35); // G5
+    }
+
+    // Color palette and shadow colors
+    const colors = [
+      "#FF6B6B", // Red - Z
+      "#48CFAD", // Cyan - I
+      "#FFCE54", // Yellow - O
+      "#FC6E51", // Orange - L
+      "#5D9CEC", // Blue - J
+      "#A0D468", // Green - S
+      "#AC92EC"  // Purple - T
+    ];
+    const shadowColors = colors.map((color) => color + "33");
+
+    // Sound effects using the global audioContext
+    function playSound(type) {
+      const gainNode = audioContext.createGain();
+      gainNode.connect(audioContext.destination);
+      gainNode.gain.value = 0.05;
+
+      const oscillator = audioContext.createOscillator();
+      oscillator.connect(gainNode);
+
+      switch (type) {
+        case "move":
+          oscillator.type = "square";
+          oscillator.frequency.setValueAtTime(220, audioContext.currentTime);
+          oscillator.start();
+          oscillator.stop(audioContext.currentTime + 0.05);
+          break;
+        case "rotate":
+          oscillator.type = "triangle";
+          oscillator.frequency.setValueAtTime(330, audioContext.currentTime);
+          oscillator.start();
+          oscillator.stop(audioContext.currentTime + 0.08);
+          break;
+        case "drop":
+          oscillator.type = "square";
+          oscillator.frequency.setValueAtTime(165, audioContext.currentTime);
+          oscillator.start();
+          oscillator.stop(audioContext.currentTime + 0.1);
+          break;
+        case "line":
+          oscillator.type = "square";
+          oscillator.frequency.setValueAtTime(440, audioContext.currentTime);
+          oscillator.start();
+          oscillator.frequency.exponentialRampToValueAtTime(
+            220,
+            audioContext.currentTime + 0.3
+          );
+          oscillator.stop(audioContext.currentTime + 0.3);
+          break;
+        case "tetris":
+          const o1 = audioContext.createOscillator();
+          const o2 = audioContext.createOscillator();
+          o1.type = "square";
+          o2.type = "square";
+          o1.connect(gainNode);
+          o2.connect(gainNode);
+          o1.frequency.setValueAtTime(440, audioContext.currentTime);
+          o2.frequency.setValueAtTime(554, audioContext.currentTime);
+          o1.start();
+          o2.start(audioContext.currentTime + 0.1);
+          o1.stop(audioContext.currentTime + 0.3);
+          o2.stop(audioContext.currentTime + 0.4);
+          break;
+        case "gameover":
+          oscillator.type = "sawtooth";
+          oscillator.frequency.setValueAtTime(110, audioContext.currentTime);
+          oscillator.start();
+          oscillator.frequency.exponentialRampToValueAtTime(
+            55,
+            audioContext.currentTime + 1
+          );
+          oscillator.stop(audioContext.currentTime + 1);
+          break;
+        case "pause":
+          oscillator.type = "square";
+          oscillator.frequency.setValueAtTime(330, audioContext.currentTime);
+          oscillator.start();
+          oscillator.stop(audioContext.currentTime + 0.2);
+          break;
+        case "resume":
+          oscillator.type = "square";
+          oscillator.frequency.setValueAtTime(440, audioContext.currentTime);
+          oscillator.start();
+          oscillator.stop(audioContext.currentTime + 0.2);
+          break;
+      }
+    }
+
+    const board = Array(rows)
+      .fill()
+      .map(() => Array(cols).fill(0));
+
+    const pieces = [
+      [[1, 1, 1, 1]], // I
+      [
+        [1, 1],
+        [1, 1],
+      ], // O
+      [
+        [1, 1, 1],
+        [0, 1, 0],
+      ], // T
+      [
+        [1, 1, 1],
+        [1, 0, 0],
+      ], // L
+      [
+        [1, 1, 1],
+        [0, 0, 1],
+      ], // J
+      [
+        [1, 1, 0],
+        [0, 1, 1],
+      ], // S
+      [
+        [0, 1, 1],
+        [1, 1, 0],
+      ], // Z
+    ];
+
+    let currentPiece = null;
+    let currentPiecePos = { x: 0, y: 0 };
+    let currentColor = "";
+    let currentShadowColor = "";
+    let currentPieceIndex = 0;
+    let nextPiece = null;
+    let nextColor = "";
+    let nextShadowColor = "";
+    let nextPieceIndex = 0;
+    let holdPiece = null;
+    let holdColor = "";
+    let holdShadowColor = "";
+    let holdPieceIndex = -1;
+    let isPaused = false;
+    let isResolvingLock = false;
+    const lineClearDelay = 180;
+
+    // CRT drawing effect with reduced blur and without per-pixel noise
+    function drawWithCRTEffect(ctx, callback) {
+      ctx.filter = "blur(0.2px)";
+      callback();
+      ctx.filter = "none";
+    }
+
+    function createPiece() {
+      if (nextPiece === null) {
+        nextPieceIndex = Math.floor(Math.random() * pieces.length);
+        nextPiece = pieces[nextPieceIndex];
+        nextColor = colors[nextPieceIndex];
+        nextShadowColor = shadowColors[nextPieceIndex];
+      }
+
+      currentPiece = nextPiece;
+      currentColor = nextColor;
+      currentShadowColor = nextShadowColor;
+      currentPieceIndex = nextPieceIndex;
+
+      const pieceIndex = Math.floor(Math.random() * pieces.length);
+      nextPiece = pieces[pieceIndex];
+      nextColor = colors[pieceIndex];
+      nextShadowColor = shadowColors[pieceIndex];
+      nextPieceIndex = pieceIndex;
+
+      currentPiecePos = {
+        x: Math.floor((cols - currentPiece[0].length) / 2),
+        y: 0,
+      };
+
+      canHold = true;
+      drawPreview();
+      drawHold();
+    }
+
+    function getCompletedRows() {
+      const completedRows = [];
+      for (let y = rows - 1; y >= 0; y--) {
+        if (board[y].every((cell) => cell !== 0)) {
+          completedRows.push(y);
+        }
+      }
+      return completedRows;
+    }
+
+    function spawnNextPiece() {
+      createPiece();
+
+      if (collide()) {  // If a new piece collides immediately -> Game Over
+        isResolvingLock = true;
+        playSound("gameover");
+
+        // Save high score if the current score is greater
+        if (score > highScore) {
+          highScore = score;
+          saveHighScore(highScore);
+        }
+
+        // Load and update high score display
+        highScore = loadHighScore();
+        updateHighScoreDisplay(highScore);
+
+        const gameOverEffect = () => {
+          let row = rows - 1;
+          const fillInterval = setInterval(() => {
+            if (row < 0) {
+              clearInterval(fillInterval);
+              setTimeout(() => {
+                // Reset Game Logic
+                board.forEach((row) => row.fill(0));
+                score = 0;
+                level = 1;
+                linesCleared = 0;
+                holdPiece = null;
+                holdColor = "";
+                holdShadowColor = "";
+                holdPieceIndex = -1;
+                scoreElement.textContent = `SCORE:0`;
+                levelElement.textContent = `LEVEL:1`;
+                currentPiece = null;
+                isResolvingLock = false;
+
+                // Clear boardCache to reset visuals
+                redrawBoardCache();
+
+                // Restart Game
+                drawHold();
+                createPiece();
+                playStartupSound();
+              }, 500);
+              return;
+            }
+
+            for (let x = 0; x < cols; x++) {
+              board[row][x] = colors[Math.floor(Math.random() * colors.length)];
+            }
+            row--;
+          }, 30);
+        };
+
+        gameOverEffect();
+      }
+    }
+
+    function drawPiece(ctx, piece, color, canvas) {
+      const previewBlockSize = 20;
+      const offsetX =
+        (canvas.width - piece[0].length * previewBlockSize) / 2;
+      const offsetY =
+        (canvas.height - piece.length * previewBlockSize) / 2;
+
+      drawWithCRTEffect(ctx, () => {
+        ctx.fillStyle = color;
+        piece.forEach((row, y) => {
+          row.forEach((value, x) => {
+            if (value) {
+              ctx.shadowBlur = 3;
+              ctx.shadowColor = color;
+              ctx.fillRect(
+                offsetX + x * previewBlockSize,
+                offsetY + y * previewBlockSize,
+                previewBlockSize - 2,
+                previewBlockSize - 2
+              );
+              ctx.shadowBlur = 0;
+              ctx.fillStyle = lightenColor(color, 50);
+              ctx.fillRect(
+                offsetX + x * previewBlockSize + 2,
+                offsetY + y * previewBlockSize + 2,
+                3,
+                3
+              );
+              ctx.fillStyle = color;
+            }
+          });
+        });
+      });
+    }
+
+    function lightenColor(color, percent) {
+      const num = parseInt(color.slice(1), 16);
+      const amt = Math.round(2.55 * percent);
+      const R = Math.min(255, (num >> 16) + amt);
+      const G = Math.min(255, ((num >> 8) & 0x00ff) + amt);
+      const B = Math.min(255, (num & 0x0000ff) + amt);
+      return `#${(0x1000000 + (R << 16) + (G << 8) + B)
+        .toString(16)
+        .slice(1)}`;
+    }
+
+    function drawPreview() {
+      previewContext.fillStyle = "#000";
+      previewContext.fillRect(0, 0, previewCanvas.width, previewCanvas.height);
+      drawGridBackground(previewContext, previewCanvas);
+      if (nextPiece) {
+        drawPiece(previewContext, nextPiece, nextColor, previewCanvas);
+      }
+    }
+
+    function drawHold() {
+      holdContext.fillStyle = "#000";
+      holdContext.fillRect(0, 0, holdCanvas.width, holdCanvas.height);
+      drawGridBackground(holdContext, holdCanvas);
+      if (holdPiece) {
+        drawPiece(holdContext, holdPiece, holdColor, holdCanvas);
+      }
+    }
+
+    function drawGridBackground(ctx, canvas) {
+      ctx.strokeStyle = "#222222";
+      ctx.lineWidth = 0.5;
+      for (let x = 0; x <= canvas.width; x += 20) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvas.height);
+        ctx.stroke();
+      }
+      for (let y = 0; y <= canvas.height; y += 20) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+        ctx.stroke();
+      }
+    }
+
+    function holdCurrentPiece() {
+      if (!canHold) return;
+      playSound("rotate");
+      if (holdPiece === null) {
+        holdPiece = currentPiece;
+        holdColor = currentColor;
+        holdShadowColor = currentShadowColor;
+        holdPieceIndex = currentPieceIndex;
+        createPiece();
+      } else {
+        const tempPiece = currentPiece;
+        const tempColor = currentColor;
+        const tempShadowColor = currentShadowColor;
+        const tempIndex = currentPieceIndex;
+        currentPiece = holdPiece;
+        currentColor = holdColor;
+        currentShadowColor = holdShadowColor;
+        currentPieceIndex = holdPieceIndex;
+        holdPiece = tempPiece;
+        holdColor = tempColor;
+        holdShadowColor = tempShadowColor;
+        holdPieceIndex = tempIndex;
+        currentPiecePos = {
+          x: Math.floor((cols - currentPiece[0].length) / 2),
+          y: 0,
+        };
+      }
+      canHold = false;
+      drawHold();
+    }
+
+    function collide(piece = currentPiece, pos = currentPiecePos) {
+      for (let y = 0; y < piece.length; y++) {
+        for (let x = 0; x < piece[y].length; x++) {
+          if (piece[y][x]) {
+            const boardX = pos.x + x;
+            const boardY = pos.y + y;
+            if (
+              boardX < 0 ||
+              boardX >= cols ||
+              boardY >= rows ||
+              (boardY >= 0 && board[boardY][boardX])
+            ) {
+              return true;
+            }
+          }
+        }
+      }
+      return false;
+    }
+
+    function getGhostPosition() {
+      const ghostPos = { ...currentPiecePos };
+      while (!collide(currentPiece, { ...ghostPos, y: ghostPos.y + 1 })) {
+        ghostPos.y++;
+      }
+      return ghostPos;
+    }
+
+    function rotate() {
+      if (!currentPiece || isResolvingLock) return;
+      playSound("rotate");
+      const rotated = currentPiece[0].map((_, i) =>
+        currentPiece.map((row) => row[i]).reverse()
+      );
+      const prevPiece = currentPiece;
+      currentPiece = rotated;
+      if (collide()) {
+        currentPiecePos.x += 1;
+        if (collide()) {
+          currentPiecePos.x -= 2;
+          if (collide()) {
+            currentPiecePos.x += 3;
+            if (collide()) {
+              currentPiecePos.x -= 2;
+              currentPiece = prevPiece;
+            }
+          }
+        }
+      }
+    }
+
+    const boardCache = document.createElement("canvas");
+    boardCache.width = canvas.width;
+    boardCache.height = canvas.height;
+    const boardCtx = boardCache.getContext("2d");
+
+    function merge() {
+      playSound("drop");
+      currentPiece.forEach((row, y) => {
+        row.forEach((value, x) => {
+          if (value) {
+            const boardY = currentPiecePos.y + y;
+            if (boardY >= 0) {
+              board[boardY][currentPiecePos.x + x] = currentColor;
+              // Draw to the offscreen canvas (instead of recalculating each frame)
+              boardCtx.fillStyle = currentColor;
+              boardCtx.shadowBlur = 3;
+              boardCtx.shadowColor = currentColor;
+              boardCtx.fillRect(
+                (currentPiecePos.x + x) * blockSize,
+                (boardY) * blockSize,
+                blockSize - 2,
+                blockSize - 2
+              );
+            }
+          }
+        });
+      });
+    }
+
+
+    function clearLines(completedRows = getCompletedRows()) {
+        const rowsToClear = new Set(completedRows);
+        const lines = rowsToClear.size;
+
+        if (lines > 0) {
+            const remainingRows = board.filter((_, rowIndex) => !rowsToClear.has(rowIndex));
+            const emptyRows = Array.from({ length: lines }, () => Array(cols).fill(0));
+            board.splice(0, board.length, ...emptyRows, ...remainingRows);
+        }
+
+        if (lines > 0) {
+            linesCleared += lines;
+            const lineScores = [0, 40, 100, 300, 1200];  // Standard Tetris scoring
+            score += lineScores[lines] * level;
+            if (lines === 4) {
+                playSound("tetris");
+            } else {
+                playSound("line");
+            }
+            scoreElement.textContent = `SCORE:${score}`;
+            level = Math.floor(linesCleared / 10) + 1;
+            levelElement.textContent = `LEVEL:${level}`;
+
+            redrawBoardCache();
+        }
+    }
+
+
+    // Create and cache the grid background:
+    const gridCache = document.createElement("canvas");
+    gridCache.width = canvas.width;
+    gridCache.height = canvas.height;
+    const gridCtx = gridCache.getContext("2d");
+
+    // Function to create the grid once
+    function createGridCache() {
+      gridCtx.clearRect(0, 0, gridCache.width, gridCache.height);
+      gridCtx.strokeStyle = "#222222";
+      gridCtx.lineWidth = 0.5;
+
+      // Draw vertical lines
+      for (let x = 0; x <= gridCache.width; x += blockSize) {
+        gridCtx.beginPath();
+        gridCtx.moveTo(x, 0);
+        gridCtx.lineTo(x, gridCache.height);
+        gridCtx.stroke();
+      }
+
+      // Draw horizontal lines
+      for (let y = 0; y <= gridCache.height; y += blockSize) {
+        gridCtx.beginPath();
+        gridCtx.moveTo(0, y);
+        gridCtx.lineTo(gridCache.width, y);
+        gridCtx.stroke();
+      }
+    }
+    createGridCache();
+
+    function redrawBoardCache() {
+        boardCtx.clearRect(0, 0, boardCache.width, boardCache.height);  // Clear the entire cached board
+
+        for (let y = 0; y < rows; y++) {
+            for (let x = 0; x < cols; x++) {
+                if (board[y][x]) {  // If there's a block
+                    boardCtx.fillStyle = board[y][x];  // Use the stored color
+                    boardCtx.shadowBlur = 3;
+                    boardCtx.shadowColor = board[y][x];
+                    boardCtx.fillRect(
+                        x * blockSize,
+                        y * blockSize,
+                        blockSize - 2,
+                        blockSize - 2
+                    );
+                }
+            }
+        }
+    }
+
+    function draw() {
+      context.fillStyle = "#000";
+      context.fillRect(0, 0, canvas.width, canvas.height);
+      context.drawImage(gridCache, 0, 0);  // Use cached grid
+      context.drawImage(boardCache, 0, 0); // Use cached board
+      
+      if (currentPiece) {
+        const ghostPos = getGhostPosition();
+        context.fillStyle = currentShadowColor;
+        currentPiece.forEach((row, y) => {
+          row.forEach((value, x) => {
+            if (value) {
+              context.fillRect(
+                (ghostPos.x + x) * blockSize + 1,
+                (ghostPos.y + y) * blockSize + 1,
+                blockSize - 4,
+                blockSize - 4
+              );
+            }
+          });
+        });
+
+        context.fillStyle = currentColor;
+        context.shadowBlur = 3;
+        context.shadowColor = currentColor;
+        currentPiece.forEach((row, y) => {
+          row.forEach((value, x) => {
+            if (value) {
+              context.fillRect(
+                (currentPiecePos.x + x) * blockSize,
+                (currentPiecePos.y + y) * blockSize,
+                blockSize - 2,
+                blockSize - 2
+              );
+            }
+          });
+        });
+        context.shadowBlur = 0;
+      }
+    }
+
+
+    let dropCounter = 0;
+    let lastTime = 0;
+    let dropInterval = 1000;
+    let animationFrameId = null;
+
+    function update(time = 0) {
+        if (!isPaused) { // Only update if NOT paused
+            const deltaTime = time - lastTime;
+            lastTime = time;
+            if (!isResolvingLock && currentPiece) {
+                dropCounter += deltaTime;
+                dropInterval = Math.max(50, 1000 - (level - 1) * 100);
+                if (dropCounter > dropInterval) {
+                    drop();
+                }
+            }
+        }
+
+        draw(); // Always redraw, even if paused
+
+        if (!isPaused) {
+            animationFrameId = requestAnimationFrame(update);
+        }
+    }
+
+    // High score things!
+    function saveHighScore(score) {
+      localStorage.setItem('highScore', score);
+    }
+
+    function loadHighScore() {
+      return localStorage.getItem('highScore') || 0;
+    }
+
+    function updateHighScoreDisplay(score) {
+      const highScoreElement = document.getElementById('high-score');
+      highScoreElement.textContent = `HIGH SCORE:${score}`;
+    }
+
+    // Generic loading of high score
+    let highScore = loadHighScore();
+    updateHighScoreDisplay(highScore);
+
+
+    function drop() {
+        if (!currentPiece || isResolvingLock) {
+            dropCounter = 0;
+            return;
+        }
+
+        currentPiecePos.y++;
+        if (collide()) {
+            currentPiecePos.y--;
+            merge();
+            const completedRows = getCompletedRows();
+
+            if (completedRows.length > 0) {
+                isResolvingLock = true;
+                currentPiece = null;
+                setTimeout(() => {
+                    clearLines(completedRows);
+                    isResolvingLock = false;
+                    spawnNextPiece();
+                }, lineClearDelay);
+            } else {
+                spawnNextPiece();
+            }
+        }
+        dropCounter = 0;
+    }
+
+
+    function togglePause() {
+    isPaused = !isPaused;
+
+        if (isPaused) {
+            playSound("pause");
+            showPauseOverlay(); // Show pause message
+        } else {
+            playSound("resume");
+            hidePauseOverlay(); // Hide pause message
+            lastTime = performance.now(); // Reset time tracking
+            requestAnimationFrame(update); // Resume game loop
+        }
+    }
+
+    function showPauseOverlay() {
+        let pauseOverlay = document.getElementById("pauseOverlay");
+        if (!pauseOverlay) {
+            pauseOverlay = document.createElement("div");
+            pauseOverlay.id = "pauseOverlay";
+            pauseOverlay.textContent = "PAUSED";
+            pauseOverlay.style.position = "fixed";
+            pauseOverlay.style.top = "50%";
+            pauseOverlay.style.left = "50%";
+            pauseOverlay.style.transform = "translate(-50%, -50%)";
+            pauseOverlay.style.fontSize = "24px";
+            pauseOverlay.style.color = "var(--tetris-cyan)";
+            pauseOverlay.style.textShadow = "0 0 10px rgba(57, 255, 20, 0.8)";
+            pauseOverlay.style.fontFamily = '"Press Start 2P", monospace';
+            pauseOverlay.style.background = "rgba(0, 0, 0, 0.7)";
+            pauseOverlay.style.padding = "20px";
+            pauseOverlay.style.borderRadius = "5px";
+            pauseOverlay.style.zIndex = "1000";
+            document.body.appendChild(pauseOverlay);
+        }
+    }
+
+    function hidePauseOverlay() {
+        const pauseOverlay = document.getElementById("pauseOverlay");
+        if (pauseOverlay) {
+            pauseOverlay.remove();
+        }
+    }
+
+
+
+    // Custom key repeat implementation to fix input delays
+    const keyRepeatDelay = 150; // initial delay before repeating (ms)
+    const keyRepeatInterval = 50; // interval between repeats (ms)
+    const keyTimers = {};
+
+    function moveLeft() {
+      if (!currentPiece || isResolvingLock) return;
+      currentPiecePos.x--;
+      if (collide()) {
+        currentPiecePos.x++;
+      } else {
+        playSound("move");
+      }
+    }
+
+    function moveRight() {
+      if (!currentPiece || isResolvingLock) return;
+      currentPiecePos.x++;
+      if (collide()) {
+        currentPiecePos.x--;
+      } else {
+        playSound("move");
+      }
+    }
+
+    function moveDown() {
+      drop();
+    }
+
+    document.addEventListener("keydown", (event) => {
+      if (!currentPiece && event.key.toLowerCase() !== "p") return;
+      if (isPaused && event.key.toLowerCase() !== "p") return; // Keeping pause as P to give more of that vintage feel of key layout, feel free to change it to escape (KeyCode 27) if any of you want to! :D
+      switch (event.key) {
+        case "p":
+        case "P":
+          togglePause();
+          break;
+        case "ArrowLeft":
+          if (!keyTimers["ArrowLeft"]) {
+            moveLeft();
+            keyTimers["ArrowLeft"] = setTimeout(() => {
+              keyTimers["ArrowLeft"] = setInterval(() => {
+                moveLeft();
+              }, keyRepeatInterval);
+            }, keyRepeatDelay);
+          }
+          break;
+        case "ArrowRight":
+          if (!keyTimers["ArrowRight"]) {
+            moveRight();
+            keyTimers["ArrowRight"] = setTimeout(() => {
+              keyTimers["ArrowRight"] = setInterval(() => {
+                moveRight();
+              }, keyRepeatInterval);
+            }, keyRepeatDelay);
+          }
+          break;
+        case "ArrowDown":
+          if (!keyTimers["ArrowDown"]) {
+            moveDown();
+            keyTimers["ArrowDown"] = setTimeout(() => {
+              keyTimers["ArrowDown"] = setInterval(() => {
+                moveDown();
+              }, keyRepeatInterval);
+            }, keyRepeatDelay);
+          }
+          break;
+        case "ArrowUp":
+          rotate();
+          break;
+        case " ":
+          if (event.repeat || !currentPiece || isResolvingLock) break;
+          while (!collide()) {
+            currentPiecePos.y++;
+          }
+          currentPiecePos.y--;
+          drop();
+          break;
+        case "Shift":
+          holdCurrentPiece();
+          break;
+      }
+      event.preventDefault();
+    });
+
+    document.addEventListener("keyup", (event) => {
+      switch (event.key) {
+        case "ArrowLeft":
+          if (keyTimers["ArrowLeft"]) {
+            clearTimeout(keyTimers["ArrowLeft"]);
+            clearInterval(keyTimers["ArrowLeft"]);
+            keyTimers["ArrowLeft"] = null;
+          }
+          break;
+        case "ArrowRight":
+          if (keyTimers["ArrowRight"]) {
+            clearTimeout(keyTimers["ArrowRight"]);
+            clearInterval(keyTimers["ArrowRight"]);
+            keyTimers["ArrowRight"] = null;
+          }
+          break;
+        case "ArrowDown":
+          if (keyTimers["ArrowDown"]) {
+            clearTimeout(keyTimers["ArrowDown"]);
+            clearInterval(keyTimers["ArrowDown"]);
+            keyTimers["ArrowDown"] = null;
+          }
+          break;
+      }
+    });
+
+    // Merged touch events for swipe, tap, and double-tap
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let lastTap = 0;
+    canvas.addEventListener(
+      "touchstart",
+      function (e) {
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+        e.preventDefault();
+      },
+      false
+    );
+
+    canvas.addEventListener(
+      "touchmove",
+      function (e) {
+        e.preventDefault();
+      },
+      false
+    );
+
+    canvas.addEventListener(
+      "touchend",
+      function (e) {
+        if (!currentPiece || isResolvingLock) {
+          e.preventDefault();
+          return;
+        }
+        const touchEndX = e.changedTouches[0].clientX;
+        const touchEndY = e.changedTouches[0].clientY;
+        const currentTime = new Date().getTime();
+        const tapLength = currentTime - lastTap;
+        const diffX = touchEndX - touchStartX;
+        const diffY = touchEndY - touchStartY;
+        if (tapLength < 300 && tapLength > 0) {
+          holdCurrentPiece();
+        } else {
+          if (Math.abs(diffX) > Math.abs(diffY)) {
+            if (diffX > 30) {
+              moveRight();
+            } else if (diffX < -30) {
+              moveLeft();
+            }
+          } else {
+            if (diffY > 50) {
+              moveDown();
+            } else if (diffY < -50) {
+              rotate();
+            } else if (Math.abs(diffX) < 10 && Math.abs(diffY) < 10) {
+              while (!collide()) {
+                currentPiecePos.y++;
+              }
+              currentPiecePos.y--;
+              drop();
+            }
+          }
+        }
+        lastTap = currentTime;
+        e.preventDefault();
+      },
+      false
+    );
+
+    // Boot sequence using a DOM overlay with text animation
+    function bootSequence() {
+      const bootOverlay = document.getElementById("bootOverlay");
+      const bootText = document.getElementById("bootText");
+      const bootLines = [
+        "SYSTEM BOOT v3.7",
+        "INITIALIZING...",
+        "LOADING TETRIS OS",
+        "READY.",
+      ];
+
+      let bootInterrupted = false;
+
+      function endBootSequence() {
+        bootInterrupted = true;
+        bootOverlay.style.transition = "opacity 0.5s";
+        bootOverlay.style.opacity = "0";
+        setTimeout(() => {
+          bootOverlay.remove();
+          createPiece();
+          playStartupSound();
+          update();
+        }, 500);
+      }
+
+      // Add event listener to skip boot sequence on Escape key press
+      document.addEventListener("keydown", function handleSkip(event) {
+        if (event.key === "Escape") {
+          document.removeEventListener("keydown", handleSkip);
+          endBootSequence();
+        }
+      });
+
+      // Create a simple "click" sound for typing
+      function playTypeSound() {
+        const clickOsc = audioContext.createOscillator();
+        const clickGain = audioContext.createGain();
+        clickOsc.connect(clickGain);
+        clickGain.connect(audioContext.destination);
+
+        clickGain.gain.value = 0.03;
+        clickOsc.frequency.value = 2000 + Math.random() * 500;
+        clickOsc.type = "square";
+
+        clickOsc.start();
+        clickOsc.stop(audioContext.currentTime + 0.01);
+      }
+
+      // Play a line completion sound
+      function playLineCompleteSound(lineIndex) {
+        const completeOsc = audioContext.createOscillator();
+        const completeGain = audioContext.createGain();
+        completeOsc.connect(completeGain);
+        completeGain.connect(audioContext.destination);
+
+        completeGain.gain.value = 0.1;
+        completeOsc.frequency.value = 440 + lineIndex * 110;
+        completeOsc.type = "sine";
+
+        completeOsc.start();
+        completeGain.gain.exponentialRampToValueAtTime(
+          0.001,
+          audioContext.currentTime + 0.3
+        );
+        completeOsc.stop(audioContext.currentTime + 0.3);
+      }
+
+      let lineIndex = 0;
+      function typeNextLine() {
+        if (bootInterrupted || lineIndex >= bootLines.length) {
+          endBootSequence();
+          return;
+        }
+
+        let charIndex = 0;
+        bootText.textContent = "";
+        const lineInterval = setInterval(() => {
+          if (bootInterrupted) {
+            clearInterval(lineInterval);
+            endBootSequence();
+            return;
+          }
+
+          if (charIndex % 2 === 0) {
+            playTypeSound();
+          }
+
+          bootText.textContent += bootLines[lineIndex][charIndex];
+          charIndex++;
+
+          if (charIndex >= bootLines[lineIndex].length) {
+            clearInterval(lineInterval);
+            bootText.textContent += "\n";
+            playLineCompleteSound(lineIndex);
+            lineIndex++;
+            setTimeout(typeNextLine, 300);
+          }
+        }, 50);
+      }
+
+      // Initial boot noise
+      setTimeout(() => {
+        if (bootInterrupted) return;
+
+        const startupNoise = audioContext.createBufferSource();
+        const noiseGain = audioContext.createGain();
+        const noiseFilter = audioContext.createBiquadFilter();
+
+        // Create noise buffer
+        const bufferSize = audioContext.sampleRate;
+        const noiseBuffer = audioContext.createBuffer(
+          1,
+          bufferSize,
+          audioContext.sampleRate
+        );
+        const output = noiseBuffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+          output[i] = Math.random() * 2 - 1;
+        }
+
+        startupNoise.buffer = noiseBuffer;
+        noiseFilter.type = "bandpass";
+        noiseFilter.frequency.value = 800;
+        noiseFilter.Q.value = 5;
+
+        startupNoise.connect(noiseFilter);
+        noiseFilter.connect(noiseGain);
+        noiseGain.connect(audioContext.destination);
+
+        noiseGain.gain.value = 0.05;
+        noiseGain.gain.exponentialRampToValueAtTime(
+          0.001,
+          audioContext.currentTime + 0.3
+        );
+        noiseFilter.frequency.exponentialRampToValueAtTime(
+          100,
+          audioContext.currentTime + 0.3
+        );
+
+        startupNoise.start();
+        startupNoise.stop(audioContext.currentTime + 0.3);
+
+        setTimeout(typeNextLine, 400);
+      }, 100);
+    }
+
+    bootSequence();
+  </script>
+</body>
+</html>
