@@ -1,0 +1,11 @@
+{
+	"name": "Brain Test",
+	"short_name": "Brain Test",
+	"description": "Brain Test: Tricky Puzzles",
+	"start_url": "index.html",
+	"display": "fullscreen",
+	"orientation": "any",
+	"background_color": "#000000",
+	"icons": [],
+	"screenshots": []
+}

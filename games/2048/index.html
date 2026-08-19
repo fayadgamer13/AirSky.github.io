@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>2048 Neo-Glass</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+
+        :root {
+            --bg-color: #0f172a;
+            --grid-bg: rgba(30, 41, 59, 0.7);
+            --cell-bg: rgba(51, 65, 85, 0.4);
+            --text-main: #f8fafc;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
+            color: var(--text-main);
+            touch-action: none;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .grid-container {
+            position: relative;
+            background-color: var(--grid-bg);
+            border-radius: 16px;
+            width: 320px;
+            height: 320px;
+            padding: 12px;
+            box-sizing: border-box;
+            user-select: none;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .grid-cell {
+            width: 65px;
+            height: 65px;
+            margin-right: 12px;
+            margin-bottom: 12px;
+            float: left;
+            border-radius: 12px;
+            background: var(--cell-bg);
+        }
+
+        .grid-cell:nth-child(4n) { margin-right: 0; }
+
+        .tile-container {
+            position: absolute;
+            z-index: 2;
+            top: 12px;
+            left: 12px;
+        }
+
+        .tile {
+            position: absolute;
+            width: 65px;
+            height: 65px;
+            line-height: 65px;
+            text-align: center;
+            font-weight: 800;
+            font-size: 28px;
+            border-radius: 12px;
+            transition: 120ms cubic-bezier(0.4, 0, 0.2, 1);
+            transition-property: transform;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+        }
+
+        .tile-new { animation: appear 200ms ease-out; }
+        .tile-merged { z-index: 20; animation: pop 200ms ease-in-out; }
+
+        @keyframes appear {
+            0% { opacity: 0; transform: scale(0.5); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        @keyframes pop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.15); filter: brightness(1.2); }
+            100% { transform: scale(1); }
+        }
+
+        /* Modern Neon Colors */
+        .tile-2 { background: #e2e8f0; color: #1e293b; }
+        .tile-4 { background: #cbd5e1; color: #1e293b; }
+        .tile-8 { background: #fb923c; color: white; box-shadow: 0 0 15px rgba(251, 146, 60, 0.3); }
+        .tile-16 { background: #f97316; color: white; box-shadow: 0 0 20px rgba(249, 115, 22, 0.4); }
+        .tile-32 { background: #ef4444; color: white; box-shadow: 0 0 20px rgba(239, 68, 68, 0.4); }
+        .tile-64 { background: #dc2626; color: white; box-shadow: 0 0 25px rgba(220, 38, 38, 0.5); }
+        .tile-128 { background: #eab308; color: white; font-size: 24px; box-shadow: 0 0 30px rgba(234, 179, 8, 0.5); }
+        .tile-256 { background: #facc15; color: #1e293b; font-size: 24px; box-shadow: 0 0 35px rgba(250, 204, 21, 0.6); }
+        .tile-512 { background: #22c55e; color: white; font-size: 24px; box-shadow: 0 0 40px rgba(34, 197, 94, 0.6); }
+        .tile-1024 { background: #06b6d4; color: white; font-size: 20px; box-shadow: 0 0 45px rgba(6, 182, 212, 0.7); }
+        .tile-2048 { background: #8b5cf6; color: white; font-size: 20px; box-shadow: 0 0 50px rgba(139, 92, 246, 0.8); }
+        .tile-super { background: #ec4899; color: white; font-size: 18px; }
+
+        .game-message {
+            display: none;
+            position: absolute;
+            top: 0; right: 0; bottom: 0; left: 0;
+            background: rgba(15, 23, 42, 0.9);
+            backdrop-filter: blur(8px);
+            z-index: 100;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            border-radius: 16px;
+        }
+
+        .game-message.active { display: flex; }
+
+        .btn-action {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.2s;
+        }
+        .btn-action:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-1px);
+        }
+        .btn-action:active {
+            transform: translateY(0px);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="glass-panel p-8">
+        <div class="flex justify-between items-start mb-6">
+            <div>
+                <h1 class="text-4xl font-extrabold tracking-tighter bg-clip-text text-transparent bg-gradient-to-br from-white to-slate-400">
+                    2048
+                </h1>
+                <p class="text-[10px] uppercase tracking-widest text-slate-400 mt-1">Neon Edition</p>
+            </div>
+            <div class="flex gap-2">
+                <div class="bg-slate-800/50 px-4 py-2 rounded-xl border border-white/5 text-center min-w-[70px]">
+                    <div class="text-[9px] uppercase font-bold text-slate-500">Score</div>
+                    <div id="score" class="text-lg font-bold leading-none mt-1">0</div>
+                </div>
+                <div class="bg-slate-800/50 px-4 py-2 rounded-xl border border-white/5 text-center min-w-[70px]">
+                    <div class="text-[9px] uppercase font-bold text-slate-500">Best</div>
+                    <div id="best-score" class="text-lg font-bold leading-none mt-1">0</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex justify-between items-center mb-6">
+            <div class="text-xs text-slate-400 max-w-[140px]">
+                Combine the tiles to reach <span class="text-purple-400 font-bold">2048</span>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="game.undo()" title="Undo (U)" class="btn-action p-2 rounded-lg text-slate-300">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                </button>
+                <button onclick="game.restart()" class="btn-action px-4 py-2 rounded-lg text-white font-bold text-sm">
+                    New Game
+                </button>
+            </div>
+        </div>
+
+        <div class="grid-container" id="grid-container">
+            <!-- Background cells -->
+            <div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div>
+            <div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div>
+            <div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div>
+            <div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div>
+            
+            <div class="tile-container" id="tile-container"></div>
+
+            <div id="game-message" class="game-message">
+                <h2 id="message-text" class="text-4xl font-bold mb-6">Game Over</h2>
+                <button onclick="game.restart()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 px-8 rounded-xl transition-all shadow-lg shadow-indigo-500/30">
+                    Play Again
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class Game2048 {
+            constructor() {
+                this.grid = Array(16).fill(null);
+                this.history = [];
+                this.score = 0;
+                this.bestScore = parseInt(localStorage.getItem('2048-best-neo')) || 0;
+                this.tileContainer = document.getElementById('tile-container');
+                this.scoreDisplay = document.getElementById('score');
+                this.bestScoreDisplay = document.getElementById('best-score');
+                this.messageOverlay = document.getElementById('game-message');
+                this.messageText = document.getElementById('message-text');
+                this.cellSize = 77;
+                
+                this.init();
+            }
+
+            init() {
+                this.bestScoreDisplay.innerText = this.bestScore;
+                this.addEventListeners();
+                this.restart();
+            }
+
+            undo() {
+                if (this.history.length === 0) return;
+                const prevState = JSON.parse(this.history.pop());
+                this.grid = prevState.grid;
+                this.score = prevState.score;
+                this.updateScore(false);
+                this.messageOverlay.classList.remove('active');
+                this.render();
+            }
+
+            restart() {
+                this.grid = Array(16).fill(null);
+                this.history = [];
+                this.score = 0;
+                this.updateScore(false);
+                this.messageOverlay.classList.remove('active');
+                this.tileContainer.innerHTML = '';
+                this.addRandomTile();
+                this.addRandomTile();
+                this.render();
+            }
+
+            addRandomTile() {
+                const emptyCells = this.grid.map((val, idx) => val === null ? idx : null).filter(val => val !== null);
+                if (emptyCells.length > 0) {
+                    const randomIdx = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+                    this.grid[randomIdx] = {
+                        value: Math.random() < 0.7 ? 2 : 4,
+                        new: true,
+                        merged: false
+                    };
+                }
+            }
+
+            addEventListeners() {
+                window.addEventListener('keydown', (e) => {
+                    if (this.messageOverlay.classList.contains('active')) return;
+                    let moved = false;
+                    
+                    if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+                        e.preventDefault();
+                    }
+
+                    switch(e.key) {
+                        case 'ArrowUp': moved = this.move('up'); break;
+                        case 'ArrowDown': moved = this.move('down'); break;
+                        case 'ArrowLeft': moved = this.move('left'); break;
+                        case 'ArrowRight': moved = this.move('right'); break;
+                        case 'u': case 'U': this.undo(); return;
+                    }
+                    if (moved) this.afterMove();
+                });
+
+                let touchStartX, touchStartY;
+                document.addEventListener('touchstart', (e) => {
+                    touchStartX = e.touches[0].clientX;
+                    touchStartY = e.touches[0].clientY;
+                }, { passive: false });
+
+                document.addEventListener('touchend', (e) => {
+                    if (!touchStartX || !touchStartY || this.messageOverlay.classList.contains('active')) return;
+                    const dx = e.changedTouches[0].clientX - touchStartX;
+                    const dy = e.changedTouches[0].clientY - touchStartY;
+                    if (Math.max(Math.abs(dx), Math.abs(dy)) > 30) {
+                        let moved = false;
+                        if (Math.abs(dx) > Math.abs(dy)) moved = dx > 0 ? this.move('right') : this.move('left');
+                        else moved = dy > 0 ? this.move('down') : this.move('up');
+                        if (moved) this.afterMove();
+                    }
+                    touchStartX = touchStartY = null;
+                }, { passive: false });
+            }
+
+            afterMove() {
+                this.addRandomTile();
+                this.render();
+                if (this.isGameOver()) {
+                    this.messageText.innerText = "Game Over";
+                    this.messageOverlay.classList.add('active');
+                }
+            }
+
+            move(direction) {
+                const originalState = JSON.stringify({ grid: this.grid, score: this.score });
+                let gridChanged = false;
+                const size = 4;
+                this.grid.forEach(tile => { if (tile) tile.merged = false; });
+
+                const getIndex = (r, c) => r * size + c;
+                const vectors = {
+                    up: { r: -1, c: 0 }, down: { r: 1, c: 0 },
+                    left: { r: 0, c: -1 }, right: { r: 0, c: 1 }
+                };
+                const vector = vectors[direction];
+
+                const rowRange = direction === 'down' ? [3, 2, 1, 0] : [0, 1, 2, 3];
+                const colRange = direction === 'right' ? [3, 2, 1, 0] : [0, 1, 2, 3];
+
+                rowRange.forEach(r => {
+                    colRange.forEach(c => {
+                        const idx = getIndex(r, c);
+                        if (!this.grid[idx]) return;
+
+                        let currR = r, currC = c;
+                        let nextR = r + vector.r, nextC = c + vector.c;
+
+                        while (nextR >= 0 && nextR < size && nextC >= 0 && nextC < size) {
+                            const nextIdx = getIndex(nextR, nextC);
+                            const currentTile = this.grid[getIndex(currR, currC)];
+                            const nextTile = this.grid[nextIdx];
+
+                            if (!nextTile) {
+                                this.grid[nextIdx] = currentTile;
+                                this.grid[getIndex(currR, currC)] = null;
+                                gridChanged = true;
+                                currR = nextR; currC = nextC;
+                            } else if (nextTile.value === currentTile.value && !nextTile.merged && !currentTile.merged) {
+                                nextTile.value *= 2;
+                                nextTile.merged = true;
+                                this.score += nextTile.value;
+                                this.grid[getIndex(currR, currC)] = null;
+                                gridChanged = true;
+                                break;
+                            } else break;
+                            nextR += vector.r; nextC += vector.c;
+                        }
+                    });
+                });
+
+                if (gridChanged) {
+                    this.history.push(originalState);
+                    if (this.history.length > 30) this.history.shift();
+                    this.updateScore(true);
+                }
+                return gridChanged;
+            }
+
+            updateScore(animate) {
+                this.scoreDisplay.innerText = this.score;
+                if (this.score > this.bestScore) {
+                    this.bestScore = this.score;
+                    this.bestScoreDisplay.innerText = this.bestScore;
+                    localStorage.setItem('2048-best-neo', this.bestScore);
+                }
+            }
+
+            isGameOver() {
+                if (this.grid.some(tile => tile === null)) return false;
+                for (let r = 0; r < 4; r++) {
+                    for (let c = 0; c < 4; c++) {
+                        const val = this.grid[r * 4 + c].value;
+                        if (c < 3 && this.grid[r * 4 + (c + 1)].value === val) return false;
+                        if (r < 3 && this.grid[(r + 1) * 4 + c].value === val) return false;
+                    }
+                }
+                return true;
+            }
+
+            render() {
+                this.tileContainer.innerHTML = '';
+                this.grid.forEach((tile, idx) => {
+                    if (tile) {
+                        const r = Math.floor(idx / 4);
+                        const c = idx % 4;
+                        const div = document.createElement('div');
+                        const isLarge = tile.value >= 100;
+                        div.className = `tile tile-${tile.value} ${tile.new ? 'tile-new' : ''} ${tile.merged ? 'tile-merged' : ''}`;
+                        if (tile.value >= 1024) div.classList.add('tile-super');
+                        div.style.transform = `translate(${c * this.cellSize}px, ${r * this.cellSize}px)`;
+                        div.innerText = tile.value;
+                        this.tileContainer.appendChild(div);
+                        tile.new = false;
+                    }
+                });
+            }
+        }
+
+        const game = new Game2048();
+    </script>
+</body>
+</html>

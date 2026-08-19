@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Block Blast Clone</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #2b3b7d;
+            --board-bg: #1a234d;
+            --cell-empty: #242e5e;
+        }
+
+        body {
+            font-family: 'Fredoka', sans-serif;
+            touch-action: none;
+            overflow: hidden;
+            background-color: var(--bg-color);
+            margin: 0;
+            user-select: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+            transition: background-color 0.8s ease-in-out;
+        }
+
+        /* Smooth theme shifts on board and cells */
+        #game-board, .grid-cell {
+            transition: background-color 0.8s ease-in-out, border-color 0.8s ease-in-out;
+        }
+
+        /* The 3D Beveled Block Look */
+        .block-3d {
+            border-radius: 4px;
+            position: relative;
+            box-shadow: inset 0 2px 4px rgba(255,255,255,0.4), 
+                        inset 0 -2px 4px rgba(0,0,0,0.3);
+            border: 1px solid rgba(0,0,0,0.15);
+        }
+
+        .block-blue { background: linear-gradient(135deg, #4da9ff, #2b70ff); }
+        .block-orange { background: linear-gradient(135deg, #ff9f4d, #ff6b2b); }
+        .block-purple { background: linear-gradient(135deg, #b34dff, #7e2bff); }
+        .block-green { background: linear-gradient(135deg, #4dff88, #2bff62); }
+        .block-yellow { background: linear-gradient(135deg, #ffd94d, #ffb32b); }
+        .block-cyan { background: linear-gradient(135deg, #4dffff, #2bc6ff); }
+        .block-red { background: linear-gradient(135deg, #ff4d4d, #ff2b2b); }
+
+        .grid-cell {
+            background-color: var(--cell-empty);
+            border-radius: 4px;
+        }
+
+        .dragging-container {
+            position: fixed;
+            z-index: 1000;
+            pointer-events: none;
+            transform: scale(1.1);
+            filter: drop-shadow(0 20px 30px rgba(0,0,0,0.6));
+            transition: transform 0.1s ease-out;
+        }
+
+        .ghost {
+            opacity: 0.45 !important;
+            box-shadow: none !important;
+        }
+
+        @keyframes clear-pop {
+            0% { transform: scale(1); filter: brightness(2); }
+            100% { transform: scale(0); opacity: 0; }
+        }
+
+        .clearing {
+            animation: clear-pop 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+
+        .score-heart {
+            position: relative;
+            background: radial-gradient(circle, #ff4dee 0%, transparent 70%);
+            width: 140px;
+            height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 5;
+        }
+
+        #tray div:active {
+            transform: scale(0.95);
+        }
+
+        /* Banner styling for Theme Blast */
+        @keyframes slide-in-out {
+            0% { transform: translateY(-100px); opacity: 0; }
+            15% { transform: translateY(0); opacity: 1; }
+            85% { transform: translateY(0); opacity: 1; }
+            100% { transform: translateY(-100px); opacity: 0; }
+        }
+
+        .milestone-banner {
+            animation: slide-in-out 2.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Theme Transition Alert -->
+    <div id="theme-alert" class="fixed top-20 left-1/2 -translate-x-1/2 bg-yellow-400/90 text-slate-900 px-6 py-3 rounded-full font-bold text-lg shadow-xl pointer-events-none z-[3000] hidden flex items-center gap-2 border-2 border-white">
+        <span>🎉</span> <span id="theme-alert-text">Theme Blast! 1000 Pts!</span>
+    </div>
+
+    <!-- Top Bar -->
+    <div class="w-full max-w-md px-6 pt-4 flex justify-between items-center z-10">
+        <div class="flex items-center gap-2 bg-black/20 px-3 py-1 rounded-full">
+            <span class="text-xl">👑</span>
+            <span id="highScore" class="text-yellow-400 text-xl font-bold">2983</span>
+        </div>
+        
+        <div class="flex items-center gap-3">
+            <!-- Quick Refresh Button -->
+            <button onclick="confirmReset()" class="text-white text-2xl opacity-80 hover:opacity-100 hover:rotate-180 duration-500 active:scale-90 transition-all" title="Refresh Board">
+                🔄
+            </button>
+            <!-- Settings Button -->
+            <button onclick="openSettings()" class="text-white text-2xl opacity-80 hover:opacity-100 hover:rotate-45 duration-300 active:scale-90 transition-all" title="Settings">
+                ⚙️
+            </button>
+        </div>
+    </div>
+
+    <!-- Central Score -->
+    <div class="score-heart">
+        <span id="score" class="text-5xl font-bold text-white drop-shadow-lg">0</span>
+    </div>
+
+    <!-- Game Board -->
+    <div class="w-full max-w-sm px-4 flex-grow-0">
+        <div id="game-board" 
+             style="background-color: var(--board-bg);"
+             class="p-1.5 rounded-xl grid grid-cols-8 grid-rows-8 gap-1 aspect-square w-full shadow-2xl border-4 border-white/5">
+            <!-- Cells generated by JS -->
+        </div>
+    </div>
+
+    <!-- Shape Tray -->
+    <div id="tray" class="w-full max-w-sm px-4 flex justify-between items-center h-40 gap-2 mb-4">
+        <!-- Shapes generated by JS -->
+    </div>
+
+    <!-- Settings Panel (Modal) -->
+    <div id="settings-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden z-[2500] flex items-center justify-center p-6">
+        <div class="bg-indigo-950/95 border-2 border-white/10 p-8 rounded-[35px] text-center max-w-xs w-full shadow-2xl text-white">
+            <h2 class="text-3xl font-bold mb-6 text-white tracking-wide">SETTINGS</h2>
+            
+            <div class="flex flex-col gap-4 mb-6">
+                <!-- Sound Toggle inside Settings -->
+                <button onclick="toggleMute()" class="w-full bg-white/10 hover:bg-white/20 active:scale-95 transition-all py-4 px-6 rounded-2xl flex items-center justify-between font-semibold">
+                    <span>Sounds & Effects</span>
+                    <span id="soundStatus" class="text-2xl">🔊</span>
+                </button>
+
+                <!-- Reset Board option -->
+                <button onclick="confirmReset(); closeSettings();" class="w-full bg-red-600/30 hover:bg-red-600/40 border border-red-500/30 active:scale-95 transition-all py-4 px-6 rounded-2xl flex items-center justify-between font-semibold">
+                    <span>Reset Game</span>
+                    <span class="text-xl">🔄</span>
+                </button>
+            </div>
+
+            <button onclick="closeSettings()" class="w-full bg-blue-600 text-white font-bold py-3.5 rounded-2xl shadow-lg active:scale-95 transition-transform">
+                RESUME
+            </button>
+        </div>
+    </div>
+
+    <!-- Clear Board Confirmation Dialog -->
+    <div id="confirm-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden z-[2600] flex items-center justify-center p-6">
+        <div class="bg-indigo-950 p-8 rounded-[35px] text-center max-w-xs w-full border border-white/10 shadow-2xl text-white">
+            <h3 class="text-2xl font-bold mb-2">Restart Game?</h3>
+            <p class="text-white/60 text-sm mb-6">You will lose your current score and board progress.</p>
+            <div class="flex gap-4">
+                <button onclick="closeConfirm()" class="flex-1 bg-white/10 hover:bg-white/20 py-3.5 rounded-2xl font-bold active:scale-95 transition-all">
+                    Cancel
+                </button>
+                <button onclick="executeReset()" class="flex-1 bg-red-600 hover:bg-red-700 py-3.5 rounded-2xl font-bold active:scale-95 transition-all">
+                    Restart
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Over -->
+    <div id="game-over" class="fixed inset-0 bg-black/80 backdrop-blur-md hidden z-[2000] flex items-center justify-center p-6">
+        <div class="bg-white p-8 rounded-[40px] text-center max-w-xs w-full shadow-2xl scale-110">
+            <h2 class="text-3xl font-bold mb-2 text-slate-800">Game Over</h2>
+            <p class="text-slate-500 mb-6">Score: <span id="final-score" class="font-bold text-blue-600">0</span></p>
+            <button onclick="resetGame()" class="w-full bg-blue-600 text-white font-bold py-4 rounded-3xl shadow-lg active:scale-95 transition-transform text-xl">
+                PLAY AGAIN
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const GRID_SIZE = 8;
+        const boardElement = document.getElementById('game-board');
+        const trayElement = document.getElementById('tray');
+        const scoreElement = document.getElementById('score');
+        const highScoreElement = document.getElementById('highScore');
+        const gameOverModal = document.getElementById('game-over');
+        const settingsModal = document.getElementById('settings-modal');
+        const confirmModal = document.getElementById('confirm-modal');
+        const soundStatus = document.getElementById('soundStatus');
+        const themeAlert = document.getElementById('theme-alert');
+        const themeAlertText = document.getElementById('theme-alert-text');
+        
+        let score = 0;
+        let highScore = localStorage.getItem('bb_highScore') || 2983;
+        let board = Array(GRID_SIZE).fill().map(() => Array(GRID_SIZE).fill(0));
+        let trayShapes = [null, null, null];
+        
+        let activePointerId = null;
+        let draggingElement = null;
+        let dragData = null;
+        let audioCtx = null;
+        let isMuted = localStorage.getItem('bb_muted') === 'true';
+
+        let lastThemeMilestone = 0;
+
+        // Visual Theme Configurations
+        const THEMES = [
+            { name: "Classic Navy", bg: "#2b3b7d", board: "#1a234d", cell: "#242e5e" }, // Reverted to default
+            { name: "Forest Meadow", bg: "#1e3f20", board: "#102311", cell: "#1a351c" },
+            { name: "Midnight Amethyst", bg: "#421a4d", board: "#250f2b", cell: "#35153e" },
+            { name: "Oceanic Deep", bg: "#114a54", board: "#0a2a30", cell: "#103c44" },
+            { name: "Molten Magma", bg: "#5c1d1a", board: "#34100e", cell: "#4a1715" },
+            { name: "Sunset Gold", bg: "#523c0b", board: "#302306", cell: "#453209" }
+        ];
+        let currentThemeIndex = 0;
+
+        // Initialize state of UI
+        soundStatus.innerText = isMuted ? '🔇' : '🔊';
+        highScoreElement.innerText = highScore;
+
+        // --- Theme Changing Logic ---
+        function applyTheme(index) {
+            const theme = THEMES[index];
+            currentThemeIndex = index;
+            document.documentElement.style.setProperty('--bg-color', theme.bg);
+            document.documentElement.style.setProperty('--board-bg', theme.board);
+            document.documentElement.style.setProperty('--cell-empty', theme.cell);
+        }
+
+        function triggerThemeBlast() {
+            // Pick a random theme different from the current one
+            let newIndex = currentThemeIndex;
+            while (newIndex === currentThemeIndex) {
+                newIndex = Math.floor(Math.random() * THEMES.length);
+            }
+            applyTheme(newIndex);
+
+            // Display floating toast banner
+            themeAlertText.innerText = `Milestone! Theme: ${THEMES[newIndex].name}`;
+            themeAlert.classList.remove('hidden', 'milestone-banner');
+            void themeAlert.offsetWidth; // Force reflow for CSS trigger
+            themeAlert.classList.add('milestone-banner');
+            
+            // Sparkling milestone audio sound
+            playSound('milestone');
+
+            setTimeout(() => {
+                themeAlert.classList.add('hidden');
+            }, 2500);
+        }
+
+        // --- Sound Generation Engine (Web Audio API) ---
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function toggleMute() {
+            isMuted = !isMuted;
+            localStorage.setItem('bb_muted', isMuted);
+            soundStatus.innerText = isMuted ? '🔇' : '🔊';
+            playSound('click');
+        }
+
+        function playSound(type) {
+            if (isMuted) return;
+            try {
+                initAudio();
+                if (!audioCtx) return;
+
+                const now = audioCtx.currentTime;
+
+                switch (type) {
+                    case 'click': {
+                        const osc = audioCtx.createOscillator();
+                        const gain = audioCtx.createGain();
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(600, now);
+                        gain.gain.setValueAtTime(0.1, now);
+                        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
+                        osc.connect(gain);
+                        gain.connect(audioCtx.destination);
+                        osc.start(now);
+                        osc.stop(now + 0.05);
+                        break;
+                    }
+                    case 'drag': {
+                        const osc = audioCtx.createOscillator();
+                        const gain = audioCtx.createGain();
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(260, now);
+                        osc.frequency.exponentialRampToValueAtTime(520, now + 0.08);
+                        gain.gain.setValueAtTime(0.12, now);
+                        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+                        osc.connect(gain);
+                        gain.connect(audioCtx.destination);
+                        osc.start(now);
+                        osc.stop(now + 0.08);
+                        break;
+                    }
+                    case 'place': {
+                        const osc = audioCtx.createOscillator();
+                        const gain = audioCtx.createGain();
+                        osc.type = 'triangle';
+                        osc.frequency.setValueAtTime(150, now);
+                        osc.frequency.exponentialRampToValueAtTime(70, now + 0.12);
+                        gain.gain.setValueAtTime(0.3, now);
+                        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
+                        osc.connect(gain);
+                        gain.connect(audioCtx.destination);
+                        osc.start(now);
+                        osc.stop(now + 0.12);
+                        break;
+                    }
+                    case 'clear': {
+                        const freqs = [329.63, 392.00, 523.25, 659.25, 783.99]; 
+                        freqs.forEach((f, i) => {
+                            const osc = audioCtx.createOscillator();
+                            const gain = audioCtx.createGain();
+                            osc.type = 'sine';
+                            osc.frequency.setValueAtTime(f, now + (i * 0.05));
+                            gain.gain.setValueAtTime(0.1, now + (i * 0.05));
+                            gain.gain.exponentialRampToValueAtTime(0.01, now + (i * 0.05) + 0.3);
+                            osc.connect(gain);
+                            gain.connect(audioCtx.destination);
+                            osc.start(now + (i * 0.05));
+                            osc.stop(now + (i * 0.05) + 0.3);
+                        });
+                        break;
+                    }
+                    case 'milestone': {
+                        // Grand celebratory chord structure
+                        const melody = [261.63, 329.63, 392.00, 523.25, 659.25, 783.99, 1046.50];
+                        melody.forEach((f, i) => {
+                            const osc = audioCtx.createOscillator();
+                            const gain = audioCtx.createGain();
+                            osc.type = 'triangle';
+                            osc.frequency.setValueAtTime(f, now + (i * 0.07));
+                            gain.gain.setValueAtTime(0.15, now + (i * 0.07));
+                            gain.gain.exponentialRampToValueAtTime(0.01, now + (i * 0.07) + 0.4);
+                            osc.connect(gain);
+                            gain.connect(audioCtx.destination);
+                            osc.start(now + (i * 0.07));
+                            osc.stop(now + (i * 0.07) + 0.4);
+                        });
+                        break;
+                    }
+                    case 'gameover': {
+                        const osc = audioCtx.createOscillator();
+                        const gain = audioCtx.createGain();
+                        osc.type = 'sawtooth';
+                        osc.frequency.setValueAtTime(220, now);
+                        osc.frequency.linearRampToValueAtTime(60, now + 0.8);
+                        gain.gain.setValueAtTime(0.15, now);
+                        gain.gain.linearRampToValueAtTime(0.01, now + 0.8);
+                        osc.connect(gain);
+                        gain.connect(audioCtx.destination);
+                        osc.start(now);
+                        osc.stop(now + 0.8);
+                        break;
+                    }
+                }
+            } catch (e) {
+                console.warn('Audio synthesis failed to play:', e);
+            }
+        }
+
+        // --- Modals Toggle Controls ---
+        function openSettings() {
+            playSound('click');
+            settingsModal.classList.remove('hidden');
+        }
+
+        function closeSettings() {
+            playSound('click');
+            settingsModal.classList.add('hidden');
+        }
+
+        function confirmReset() {
+            playSound('click');
+            confirmModal.classList.remove('hidden');
+        }
+
+        function closeConfirm() {
+            playSound('click');
+            confirmModal.classList.add('hidden');
+        }
+
+        function executeReset() {
+            confirmModal.classList.add('hidden');
+            resetGame();
+        }
+
+        const COLOR_CLASSES = ['', 'block-blue', 'block-orange', 'block-purple', 'block-green', 'block-yellow', 'block-cyan', 'block-red'];
+
+        const SHAPE_DATA = [
+            { color: 1, layout: [[0,0], [0,1], [1,0], [1,1]] }, // 2x2
+            { color: 2, layout: [[0,0]] }, // 1x1
+            { color: 3, layout: [[0,0], [1,0], [2,0]] }, // 3x1
+            { color: 3, layout: [[0,0], [0,1], [0,2]] }, // 1x3
+            { color: 4, layout: [[0,1], [1,1], [2,1], [2,0]] }, // L
+            { color: 5, layout: [[0,0], [0,1], [0,2], [0,3]] }, // 4x1
+            { color: 6, layout: [[0,1], [1,0], [1,1], [1,2]] }, // T
+            { color: 7, layout: [[0,0], [1,0], [1,1]] }, // Small L
+        ];
+
+        function initBoard() {
+            boardElement.innerHTML = '';
+            for (let r = 0; r < GRID_SIZE; r++) {
+                for (let c = 0; c < GRID_SIZE; c++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'grid-cell';
+                    cell.dataset.row = r;
+                    cell.dataset.col = c;
+                    boardElement.appendChild(cell);
+                }
+            }
+        }
+
+        function generateTray() {
+            trayElement.innerHTML = '';
+            for (let i = 0; i < 3; i++) {
+                const shape = SHAPE_DATA[Math.floor(Math.random() * SHAPE_DATA.length)];
+                trayShapes[i] = shape;
+                renderTrayShape(shape, i);
+            }
+            checkGameStatus();
+        }
+
+        function renderTrayShape(shape, index) {
+            const container = document.createElement('div');
+            container.className = 'flex-1 h-full flex items-center justify-center cursor-grab active:cursor-grabbing transition-all';
+            
+            const rows = Math.max(...shape.layout.map(p => p[0])) + 1;
+            const cols = Math.max(...shape.layout.map(p => p[1])) + 1;
+            
+            const grid = document.createElement('div');
+            grid.style.display = 'grid';
+            grid.style.gridTemplateRows = `repeat(${rows}, 18px)`;
+            grid.style.gridTemplateColumns = `repeat(${cols}, 18px)`;
+            grid.style.gap = '2px';
+            grid.className = 'pointer-events-none';
+
+            shape.layout.forEach(([r, c]) => {
+                const block = document.createElement('div');
+                block.className = `w-full h-full block-3d ${COLOR_CLASSES[shape.color]}`;
+                block.style.gridRow = r + 1;
+                block.style.gridColumn = c + 1;
+                grid.appendChild(block);
+            });
+
+            container.appendChild(grid);
+            container.onpointerdown = (e) => startDrag(e, shape, index, container);
+            trayElement.appendChild(container);
+        }
+
+        function startDrag(e, shape, index, container) {
+            if (activePointerId !== null) return;
+            activePointerId = e.pointerId;
+            container.setPointerCapture(e.pointerId);
+
+            playSound('drag');
+
+            dragData = { shape, index, container };
+            container.style.visibility = 'hidden';
+
+            // Create visual drag representation
+            draggingElement = document.createElement('div');
+            draggingElement.className = 'dragging-container';
+            
+            const cellSize = boardElement.offsetWidth / 8;
+            const rows = Math.max(...shape.layout.map(p => p[0])) + 1;
+            const cols = Math.max(...shape.layout.map(p => p[1])) + 1;
+
+            const grid = document.createElement('div');
+            grid.style.display = 'grid';
+            grid.style.gridTemplateRows = `repeat(${rows}, ${cellSize - 2}px)`;
+            grid.style.gridTemplateColumns = `repeat(${cols}, ${cellSize - 2}px)`;
+            grid.style.gap = '2px';
+
+            shape.layout.forEach(([r, c]) => {
+                const block = document.createElement('div');
+                block.className = `w-full h-full block-3d ${COLOR_CLASSES[shape.color]}`;
+                block.style.gridRow = r + 1;
+                block.style.gridColumn = c + 1;
+                grid.appendChild(block);
+            });
+
+            draggingElement.appendChild(grid);
+            document.body.appendChild(draggingElement);
+
+            updateDragPosition(e);
+
+            container.onpointermove = updateDragPosition;
+            container.onpointerup = (upEvent) => {
+                container.releasePointerCapture(upEvent.pointerId);
+                endDrag(upEvent);
+                container.onpointermove = null;
+                container.onpointerup = null;
+                activePointerId = null;
+            };
+        }
+
+        function updateDragPosition(e) {
+            if (!draggingElement) return;
+
+            // Follow finger with fixed vertical offset
+            const offset = 120; 
+            const x = e.clientX - (draggingElement.offsetWidth / 2);
+            const y = e.clientY - (draggingElement.offsetHeight / 2) - offset;
+
+            draggingElement.style.left = `${x}px`;
+            draggingElement.style.top = `${y}px`;
+
+            clearGhosts();
+            const target = getTargetCell();
+            if (target && canPlace(dragData.shape, target.r, target.c)) {
+                dragData.shape.layout.forEach(([dr, dc]) => {
+                    const cell = getCellEl(target.r + dr, target.c + dc);
+                    if (cell) cell.classList.add('ghost', COLOR_CLASSES[dragData.shape.color], 'block-3d');
+                });
+            }
+        }
+
+        function endDrag(e) {
+            if (!draggingElement) return;
+
+            const target = getTargetCell();
+            let success = false;
+
+            if (target && canPlace(dragData.shape, target.r, target.c)) {
+                placeShape(dragData.shape, target.r, target.c);
+                trayShapes[dragData.index] = null;
+                dragData.container.onpointerdown = null;
+                dragData.container.innerHTML = '';
+                success = true;
+                
+                const cleared = checkLines();
+                if (!cleared) {
+                    playSound('place');
+                }
+                
+                if (trayShapes.every(s => s === null)) generateTray();
+                else checkGameStatus();
+            }
+
+            if (!success) {
+                dragData.container.style.visibility = 'visible';
+            }
+
+            draggingElement.remove();
+            draggingElement = null;
+            dragData = null;
+            clearGhosts();
+        }
+
+        function getTargetCell() {
+            const boardRect = boardElement.getBoundingClientRect();
+            const dragRect = draggingElement.getBoundingClientRect();
+            const cellSize = boardElement.offsetWidth / 8;
+
+            const pivotX = dragRect.left + (cellSize / 2);
+            const pivotY = dragRect.top + (cellSize / 2);
+
+            const r = Math.floor((pivotY - boardRect.top) / cellSize);
+            const c = Math.floor((pivotX - boardRect.left) / cellSize);
+
+            if (r >= 0 && r < 8 && c >= 0 && c < 8) return { r, c };
+            return null;
+        }
+
+        function canPlace(shape, r, c) {
+            return shape.layout.every(([dr, dc]) => {
+                const nr = r + dr;
+                const nc = c + dc;
+                return nr >= 0 && nr < 8 && nc >= 0 && nc < 8 && board[nr][nc] === 0;
+            });
+        }
+
+        function placeShape(shape, r, c) {
+            shape.layout.forEach(([dr, dc]) => {
+                const nr = r + dr;
+                const nc = c + dc;
+                board[nr][nc] = shape.color;
+                const el = getCellEl(nr, nc);
+                el.className = `grid-cell block-3d ${COLOR_CLASSES[shape.color]}`;
+            });
+            addScore(shape.layout.length);
+        }
+
+        function checkLines() {
+            let fullRows = [];
+            let fullCols = [];
+
+            for (let i = 0; i < 8; i++) {
+                if (board[i].every(v => v !== 0)) fullRows.push(i);
+                let colFull = true;
+                for (let j = 0; j < 8; j++) if (board[j][i] === 0) colFull = false;
+                if (colFull) fullCols.push(i);
+            }
+
+            if (fullRows.length > 0 || fullCols.length > 0) {
+                playSound('clear');
+                const lines = fullRows.length + fullCols.length;
+                addScore(lines * 100 + (lines > 1 ? lines * 50 : 0));
+
+                fullRows.forEach(r => {
+                    for(let c=0; c<8; c++) {
+                        getCellEl(r, c).classList.add('clearing');
+                        board[r][c] = 0;
+                    }
+                });
+                fullCols.forEach(c => {
+                    for(let r=0; r<8; r++) {
+                        getCellEl(r, c).classList.add('clearing');
+                        board[r][c] = 0;
+                    }
+                });
+
+                setTimeout(() => {
+                    document.querySelectorAll('.clearing').forEach(el => {
+                        el.className = 'grid-cell';
+                    });
+                }, 300);
+                return true;
+            }
+            return false;
+        }
+
+        function checkGameStatus() {
+            const possible = trayShapes.some((s) => {
+                if (!s) return false;
+                for (let r = 0; r < 8; r++) {
+                    for (let c = 0; c < 8; c++) {
+                        if (canPlace(s, r, c)) return true;
+                    }
+                }
+                return false;
+            });
+
+            if (!possible && trayShapes.some(s => s !== null)) {
+                playSound('gameover');
+                setTimeout(() => {
+                    document.getElementById('final-score').innerText = score;
+                    gameOverModal.classList.remove('hidden');
+                }, 1000);
+            }
+        }
+
+        function addScore(pts) {
+            score += pts;
+            scoreElement.innerText = score;
+            if (score > highScore) {
+                highScore = score;
+                highScoreElement.innerText = highScore;
+                localStorage.setItem('bb_highScore', highScore);
+            }
+
+            // Check if user crossed a multiple of 1000 points
+            let currentMilestone = Math.floor(score / 1000);
+            if (currentMilestone > lastThemeMilestone) {
+                lastThemeMilestone = currentMilestone;
+                triggerThemeBlast();
+            }
+        }
+
+        function clearGhosts() {
+            document.querySelectorAll('.ghost').forEach(el => {
+                el.className = 'grid-cell';
+            });
+        }
+
+        function getCellEl(r, c) {
+            return document.querySelector(`.grid-cell[data-row="${r}"][data-col="${c}"]`);
+        }
+
+        function resetGame() {
+            playSound('click');
+            score = 0;
+            lastThemeMilestone = 0;
+            scoreElement.innerText = '0';
+            board = Array(GRID_SIZE).fill().map(() => Array(GRID_SIZE).fill(0));
+            gameOverModal.classList.add('hidden');
+            
+            // Revert back to original/default theme
+            applyTheme(0);
+            
+            initBoard();
+            generateTray();
+        }
+
+        window.onload = () => {
+            applyTheme(0); // Set default navy theme
+            initBoard();
+            generateTray();
+        };
+    </script>
+</body>
+</html>
