@@ -1,0 +1,1393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connect 4 Masterclass</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Orbitron:wght@500;700;900&family=Playfair+Display:ital,wght@0,600;1,600&display=swap" rel="stylesheet">
+    <!-- Canvas Confetti CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <style>
+        :root {
+            --board-bg: #1e3a8a;
+            --board-border: #1d4ed8;
+            --p1-color: #ef4444;
+            --p1-shadow: #b91c1c;
+            --p2-color: #eab308;
+            --p2-shadow: #a16207;
+            --board-shadow: rgba(30, 58, 138, 0.4);
+            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-gradient);
+            min-height: 100vh;
+            color: #f8fafc;
+            overflow-x: hidden;
+            transition: background 0.5s ease, color 0.5s ease;
+        }
+
+        /* Retro Classic Theme overrides */
+        .theme-classic {
+            --board-bg: #2563eb;
+            --board-border: #1d4ed8;
+            --p1-color: #ef4444;
+            --p1-shadow: #b91c1c;
+            --p2-color: #fbbf24;
+            --p2-shadow: #d97706;
+            --board-shadow: rgba(37, 99, 235, 0.3);
+            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        }
+
+        /* Neon Cyberpunk Theme overrides */
+        .theme-cyberpunk {
+            --board-bg: #09090b;
+            --board-border: #ec4899;
+            --p1-color: #06b6d4;
+            --p1-shadow: #0891b2;
+            --p2-color: #ec4899;
+            --p2-shadow: #db2777;
+            --board-shadow: rgba(236, 72, 153, 0.4);
+            --bg-gradient: linear-gradient(135deg, #020617 0%, #0f172a 100%);
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        /* Warm Wood Theme overrides */
+        .theme-wood {
+            --board-bg: #854d0e;
+            --board-border: #a16207;
+            --p1-color: #b91c1c;
+            --p1-shadow: #7f1d1d;
+            --p2-color: #fed7aa;
+            --p2-shadow: #fdba74;
+            --board-shadow: rgba(133, 77, 14, 0.5);
+            --bg-gradient: linear-gradient(135deg, #1c1917 0%, #292524 100%);
+        }
+
+        /* Minimalist Dark Theme overrides */
+        .theme-minimal {
+            --board-bg: #334155;
+            --board-border: #475569;
+            --p1-color: #10b981;
+            --p1-shadow: #047857;
+            --p2-color: #f43f5e;
+            --p2-shadow: #be123c;
+            --board-shadow: rgba(71, 85, 105, 0.3);
+            --bg-gradient: linear-gradient(135deg, #030712 0%, #111827 100%);
+        }
+
+        /* Drop bounce animation curves */
+        .drop-transition {
+            transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        /* Glowing winning connections */
+        @keyframes pulseGlow {
+            0%, 100% {
+                transform: scale(1);
+                box-shadow: 0 0 12px 4px var(--token-glow-color, rgba(255, 255, 255, 0.5));
+            }
+            50% {
+                transform: scale(1.12);
+                box-shadow: 0 0 24px 8px var(--token-glow-color, rgba(255, 255, 255, 0.8));
+            }
+        }
+
+        .winner-glow {
+            animation: pulseGlow 1.2s infinite ease-in-out;
+            z-index: 30 !important;
+        }
+
+        /* Custom scrollbar for game logs */
+        .custom-scroll::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scroll::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 99px;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 99px;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.4);
+        }
+
+        /* 3D styling for Connect 4 Board */
+        .board-container {
+            perspective: 1000px;
+        }
+
+        .board-wrapper {
+            transform: rotateX(8deg);
+            box-shadow: 
+                0 20px 25px -5px rgba(0, 0, 0, 0.5),
+                0 8px 10px -6px rgba(0, 0, 0, 0.5),
+                inset 0 2px 4px rgba(255, 255, 255, 0.15),
+                0 0 40px var(--board-shadow);
+            border: 4px solid var(--board-border);
+            background: var(--board-bg);
+        }
+
+        /* Tokens styles */
+        .token {
+            position: relative;
+            border-radius: 50%;
+            background: radial-gradient(circle at 35% 35%, var(--color) 0%, var(--shadow) 100%);
+            box-shadow: 
+                inset -2px -2px 6px rgba(0, 0, 0, 0.4),
+                inset 2px 2px 6px rgba(255, 255, 255, 0.4),
+                0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        .token-p1 {
+            --color: var(--p1-color);
+            --shadow: var(--p1-shadow);
+            --token-glow-color: var(--p1-color);
+        }
+
+        .token-p2 {
+            --color: var(--p2-color);
+            --shadow: var(--p2-shadow);
+            --token-glow-color: var(--p2-color);
+        }
+
+        .token-empty {
+            background: radial-gradient(circle at 50% 50%, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.6) 100%);
+            box-shadow: inset 2px 2px 5px rgba(0,0,0,0.6), 1px 1px 1px rgba(255,255,255,0.05);
+        }
+
+        /* Board overlay hole cutout trick */
+        .hole-mask {
+            pointer-events: none;
+            box-shadow: 0 0 0 100px var(--board-bg);
+            border-radius: 50%;
+        }
+
+        /* Floating Animation */
+        @keyframes float-gentle {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-4px); }
+        }
+        .floating-element {
+            animation: float-gentle 3s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body class="theme-classic">
+
+    <div class="max-w-7xl mx-auto px-4 py-6 md:py-10 flex flex-col min-h-screen justify-between relative z-10">
+        
+        <!-- Top Controls / Navigation Bar -->
+        <header class="flex flex-col md:flex-row items-center justify-between gap-4 mb-6 pb-6 border-b border-slate-700/50">
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-2xl shadow-lg shadow-blue-500/20">
+                    <i class="fa-solid fa-grid-4"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl md:text-3xl font-bold tracking-tight bg-gradient-to-r from-blue-400 via-indigo-200 to-emerald-400 bg-clip-text text-transparent">
+                        CONNECT 4 <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 ml-2 uppercase border border-slate-700">Arena</span>
+                    </h1>
+                    <p class="text-xs text-slate-400">Challenge the advanced AI or play locally</p>
+                </div>
+            </div>
+
+            <!-- Global Configurations -->
+            <div class="flex flex-wrap items-center gap-2 md:gap-3 bg-slate-900/40 p-1.5 rounded-2xl border border-slate-800/80 backdrop-blur-md">
+                <!-- Theme Select -->
+                <div class="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-slate-400">
+                    <i class="fa-solid fa-palette"></i>
+                    <select id="themeSelector" class="bg-transparent text-slate-200 focus:outline-none cursor-pointer">
+                        <option value="classic" class="bg-slate-900 text-slate-200">Classic</option>
+                        <option value="cyberpunk" class="bg-slate-900 text-slate-200">Cyberpunk</option>
+                        <option value="wood" class="bg-slate-900 text-slate-200">Warm Wood</option>
+                        <option value="minimal" class="bg-slate-900 text-slate-200">Minimalist</option>
+                    </select>
+                </div>
+
+                <div class="h-4 w-px bg-slate-800"></div>
+
+                <!-- Sound Switch -->
+                <button id="soundToggle" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl hover:bg-slate-800/80 text-xs text-slate-300 transition-all">
+                    <i class="fa-solid fa-volume-high" id="soundIcon"></i>
+                    <span id="soundText">Sound On</span>
+                </button>
+                
+                <div class="h-4 w-px bg-slate-800"></div>
+
+                <!-- Reset Statistics -->
+                <button id="resetStats" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl hover:bg-rose-500/10 hover:text-rose-400 text-xs text-slate-300 transition-all" title="Reset Scoreboard">
+                    <i class="fa-solid fa-rotate-left"></i>
+                    <span>Reset Stats</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Workspace: Splits Board and Control Panels -->
+        <main class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start my-auto">
+            
+            <!-- Left Panel: Configurations, Mode Selector & Leaderboards -->
+            <section class="lg:col-span-4 flex flex-col gap-5">
+                
+                <!-- Game Configuration Panel -->
+                <div class="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-5 backdrop-blur-md shadow-xl">
+                    <h3 class="text-sm font-semibold uppercase tracking-wider text-slate-400 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-sliders text-indigo-400"></i> Game Setup
+                    </h3>
+                    
+                    <!-- Match Mode -->
+                    <div class="mb-4">
+                        <label class="block text-xs font-medium text-slate-400 mb-2">Match Mode</label>
+                        <div class="grid grid-cols-2 gap-2 bg-slate-950 p-1 rounded-xl border border-slate-800">
+                            <button id="modePvP" class="py-2 px-3 rounded-lg text-xs font-medium transition-all flex items-center justify-center gap-2 text-slate-400 hover:text-slate-200">
+                                <i class="fa-solid fa-users"></i> Local PvP
+                            </button>
+                            <button id="modePvAI" class="py-2 px-3 rounded-lg text-xs font-medium transition-all flex items-center justify-center gap-2 bg-indigo-600 text-white shadow-md shadow-indigo-600/20">
+                                <i class="fa-solid fa-robot"></i> Versus AI
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- AI Difficulty (Conditional rendering via JS class updates) -->
+                    <div id="aiConfigSection" class="mb-4">
+                        <label class="block text-xs font-medium text-slate-400 mb-2">AI Strategy Strength</label>
+                        <div class="grid grid-cols-3 gap-1.5 bg-slate-950 p-1 rounded-xl border border-slate-800">
+                            <button data-diff="easy" class="ai-diff-btn py-1.5 text-xs rounded-lg font-medium transition-all hover:text-slate-200 text-slate-400">Easy</button>
+                            <button data-diff="medium" class="ai-diff-btn py-1.5 text-xs rounded-lg font-medium transition-all hover:text-slate-200 bg-indigo-600 text-white font-semibold">Medium</button>
+                            <button data-diff="hard" class="ai-diff-btn py-1.5 text-xs rounded-lg font-medium transition-all hover:text-slate-200 text-slate-400">Expert</button>
+                        </div>
+                    </div>
+
+                    <!-- Start order settings -->
+                    <div id="aiTurnSection" class="flex items-center justify-between py-2 px-3 rounded-xl bg-slate-950/60 border border-slate-800/50">
+                        <div class="flex flex-col">
+                            <span class="text-xs font-semibold text-slate-300">AI Plays First</span>
+                            <span class="text-[10px] text-slate-400">Red takes the initial move</span>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="aiStartFirst" class="sr-only peer">
+                            <div class="w-9 h-5 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
+                        </label>
+                    </div>
+
+                </div>
+
+                <!-- Statistics Board -->
+                <div class="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-5 backdrop-blur-md shadow-xl">
+                    <h3 class="text-sm font-semibold uppercase tracking-wider text-slate-400 mb-4 flex items-center justify-between">
+                        <span class="flex items-center gap-2">
+                            <i class="fa-solid fa-trophy text-amber-400"></i> SCOREBOARD
+                        </span>
+                        <span class="text-xs text-slate-500 font-mono tracking-widest" id="streakCounter">0 streak</span>
+                    </h3>
+                    
+                    <div class="grid grid-cols-3 gap-3 text-center mb-4">
+                        <div class="bg-slate-950/80 p-3 rounded-xl border border-slate-800/80">
+                            <span class="block text-[10px] uppercase font-semibold text-rose-400 tracking-wider" id="p1Name">Player 1</span>
+                            <span class="text-xl font-bold tracking-tight text-slate-100" id="statsP1">0</span>
+                        </div>
+                        <div class="bg-slate-950/80 p-3 rounded-xl border border-slate-800/80">
+                            <span class="block text-[10px] uppercase font-semibold text-slate-400 tracking-wider">Draws</span>
+                            <span class="text-xl font-bold tracking-tight text-slate-100" id="statsDraw">0</span>
+                        </div>
+                        <div class="bg-slate-950/80 p-3 rounded-xl border border-slate-800/80">
+                            <span class="block text-[10px] uppercase font-semibold text-amber-400 tracking-wider" id="p2Name">AI</span>
+                            <span class="text-xl font-bold tracking-tight text-slate-100" id="statsP2">0</span>
+                        </div>
+                    </div>
+
+                    <!-- Custom Activity Log -->
+                    <div class="bg-slate-950/40 border border-slate-800/50 rounded-xl p-3">
+                        <span class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Live Timeline</span>
+                        <div id="gameLog" class="h-24 overflow-y-auto custom-scroll text-xs text-slate-400 flex flex-col gap-1.5 pr-1">
+                            <div class="text-emerald-400 font-semibold flex items-center gap-1">
+                                <i class="fa-solid fa-circle-check text-[8px]"></i> System loaded. Ready to play!
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Interactive Game Play Options (Undo, Restart) -->
+                <div class="flex gap-3">
+                    <button id="btnUndo" class="flex-1 bg-slate-800/80 hover:bg-slate-700/80 text-white font-medium py-3 px-4 rounded-xl text-xs transition-all flex items-center justify-center gap-2 border border-slate-700/50 hover:border-slate-600 shadow-lg shadow-slate-950/20">
+                        <i class="fa-solid fa-reply"></i> Undo Move
+                    </button>
+                    <button id="btnRestart" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 px-4 rounded-xl text-xs transition-all flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/20 hover:scale-[1.02]">
+                        <i class="fa-solid fa-rotate"></i> Reset Game
+                    </button>
+                </div>
+
+            </section>
+
+            <!-- Right Panel: Connect 4 Interactive Grid Board -->
+            <section class="lg:col-span-8 flex flex-col items-center">
+                
+                <!-- Match Indicator Badge -->
+                <div class="mb-5 flex items-center gap-3 bg-slate-900/60 px-5 py-2.5 rounded-full border border-slate-800 backdrop-blur-md shadow-md">
+                    <div class="w-3.5 h-3.5 rounded-full transition-all duration-300" id="turnIndicatorBall"></div>
+                    <span id="turnIndicatorText" class="text-xs font-bold text-slate-200 tracking-wide uppercase">Your Turn (Red)</span>
+                    <span id="thinkingSpinner" class="hidden"><i class="fa-solid fa-spinner animate-spin text-amber-400 text-xs"></i></span>
+                </div>
+
+                <!-- Column Interactive Drop Selector Guides -->
+                <div class="w-full max-w-[550px] grid grid-cols-7 gap-1 md:gap-2 px-3 mb-1 justify-items-center">
+                    <div class="col-selector-guide text-slate-500 transition-all text-center" data-col="0"><i class="fa-solid fa-arrow-down-long animate-bounce text-sm"></i></div>
+                    <div class="col-selector-guide text-slate-500 transition-all text-center" data-col="1"><i class="fa-solid fa-arrow-down-long animate-bounce text-sm"></i></div>
+                    <div class="col-selector-guide text-slate-500 transition-all text-center" data-col="2"><i class="fa-solid fa-arrow-down-long animate-bounce text-sm"></i></div>
+                    <div class="col-selector-guide text-slate-500 transition-all text-center" data-col="3"><i class="fa-solid fa-arrow-down-long animate-bounce text-sm"></i></div>
+                    <div class="col-selector-guide text-slate-500 transition-all text-center" data-col="4"><i class="fa-solid fa-arrow-down-long animate-bounce text-sm"></i></div>
+                    <div class="col-selector-guide text-slate-500 transition-all text-center" data-col="5"><i class="fa-solid fa-arrow-down-long animate-bounce text-sm"></i></div>
+                    <div class="col-selector-guide text-slate-500 transition-all text-center" data-col="6"><i class="fa-solid fa-arrow-down-long animate-bounce text-sm"></i></div>
+                </div>
+
+                <!-- Connect 4 Board Wrapper (With Perspective) -->
+                <div class="board-container w-full max-w-[550px]">
+                    <div class="board-wrapper p-3 md:p-4 rounded-2xl relative select-none">
+                        
+                        <!-- Main Interactive Board Slots (CSS Grid) -->
+                        <div id="boardGrid" class="grid grid-cols-7 gap-1.5 md:gap-2.5 relative z-20">
+                            <!-- 42 slots generated on the fly via JS to facilitate perfect coordinate mapping -->
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- Interactive Tutorial Tooltip -->
+                <div class="mt-4 text-center text-[10px] md:text-xs text-slate-400">
+                    <i class="fa-solid fa-circle-info text-blue-400 mr-1"></i> Click on any column to drop your colored token into the deepest vacant row. Connect 4 to win!
+                </div>
+
+            </section>
+
+        </main>
+
+        <!-- Dynamic Game End Modal (Glassmorphic Backdrop over Canvas Confetti) -->
+        <div id="gameEndOverlay" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300">
+            <div class="bg-gradient-to-br from-slate-900 via-slate-900 to-indigo-950/80 border border-slate-800/80 rounded-3xl p-8 max-w-sm w-full mx-4 shadow-2xl shadow-indigo-500/10 text-center transform scale-95 transition-transform duration-300" id="gameEndCard">
+                
+                <div class="relative mb-6 flex justify-center">
+                    <div class="w-20 h-20 bg-indigo-500/10 border border-indigo-500/30 rounded-full flex items-center justify-center text-4xl text-indigo-400 shadow-inner" id="resultModalIcon">
+                        <i class="fa-solid fa-crown"></i>
+                    </div>
+                </div>
+
+                <h2 id="resultTitle" class="text-2xl md:text-3xl font-extrabold text-slate-100 tracking-tight mb-2">Victory Declared!</h2>
+                <p id="resultText" class="text-sm text-slate-300 mb-6">Player 1 successfully linked a sequence of 4 inline tokens.</p>
+
+                <!-- Small Scoreboard in Modal -->
+                <div class="flex justify-around items-center bg-slate-950/60 border border-slate-800/50 rounded-2xl py-3 px-4 mb-6">
+                    <div class="text-center">
+                        <div class="text-[10px] uppercase font-bold text-rose-400" id="modalP1Name">Player 1</div>
+                        <div class="text-lg font-bold text-slate-100" id="modalStatsP1">0</div>
+                    </div>
+                    <div class="h-8 w-px bg-slate-800"></div>
+                    <div class="text-center">
+                        <div class="text-[10px] uppercase font-bold text-slate-400">Draws</div>
+                        <div class="text-lg font-bold text-slate-100" id="modalStatsDraw">0</div>
+                    </div>
+                    <div class="h-8 w-px bg-slate-800"></div>
+                    <div class="text-center">
+                        <div class="text-[10px] uppercase font-bold text-amber-400" id="modalP2Name">AI</div>
+                        <div class="text-lg font-bold text-slate-100" id="modalStatsP2">0</div>
+                    </div>
+                </div>
+
+                <div class="flex gap-3">
+                    <button id="modalBtnMenu" class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold py-3 px-4 rounded-xl text-xs transition-all border border-slate-700/50">
+                        Dismiss
+                    </button>
+                    <button id="modalBtnRematch" class="flex-1 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold py-3 px-4 rounded-xl text-xs transition-all shadow-lg shadow-indigo-600/20">
+                        Play Again
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- System Footer -->
+        <footer class="mt-8 pt-4 border-t border-slate-800/60 flex flex-col sm:flex-row justify-between items-center gap-3 text-[11px] text-slate-400">
+            <div>
+                Connect 4 Masterclass Engine v2.4 (HTML5 Audio Synthesis & Hybrid Minimax Node Search)
+            </div>
+            <div class="flex gap-4">
+                <span class="hover:text-slate-300 transition-colors"><i class="fa-solid fa-microchip mr-1"></i> Custom Heuristics AI</span>
+                <span class="hover:text-slate-300 transition-colors"><i class="fa-solid fa-volume-high mr-1"></i> WebSynth Audio</span>
+            </div>
+        </footer>
+
+    </div>
+
+    <script>
+        // --- SOUND SYNTHESIS ENGINE (Using HTML5 Web Audio API) ---
+        class SoundEngine {
+            constructor() {
+                this.ctx = null;
+                this.muted = false;
+            }
+
+            init() {
+                if (!this.ctx) {
+                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+            }
+
+            playClick() {
+                if (this.muted) return;
+                this.init();
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(800, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(150, this.ctx.currentTime + 0.1);
+                
+                gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.1);
+                
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.1);
+            }
+
+            playDrop(row) {
+                if (this.muted) return;
+                this.init();
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                
+                // Frequency is slightly lower depending on depth (deepest drop is lowest)
+                const startFreq = 400 - (row * 30);
+                const endFreq = 120 - (row * 10);
+                
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(startFreq, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(endFreq, this.ctx.currentTime + 0.25);
+                
+                gain.gain.setValueAtTime(0.25, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.28);
+                
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.3);
+            }
+
+            playWin() {
+                if (this.muted) return;
+                this.init();
+                const notes = [261.63, 329.63, 392.00, 523.25, 659.25, 783.99, 1046.50]; // C Major Arpeggio
+                const now = this.ctx.currentTime;
+                
+                notes.forEach((note, index) => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(note, now + index * 0.12);
+                    
+                    gain.gain.setValueAtTime(0, now);
+                    gain.gain.linearRampToValueAtTime(0.15, now + index * 0.12 + 0.02);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + index * 0.12 + 0.4);
+                    
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now + index * 0.12);
+                    osc.stop(now + index * 0.12 + 0.45);
+                });
+            }
+
+            playDraw() {
+                if (this.muted) return;
+                this.init();
+                const now = this.ctx.currentTime;
+                const notes = [220.00, 207.65, 196.00]; // Melancholy descent
+                
+                notes.forEach((note, index) => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(note, now + index * 0.25);
+                    
+                    gain.gain.setValueAtTime(0.1, now + index * 0.25);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + index * 0.25 + 0.4);
+                    
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now + index * 0.25);
+                    osc.stop(now + index * 0.25 + 0.4);
+                });
+            }
+        }
+
+        const audio = new SoundEngine();
+
+        // --- GAME CORE ENGINE ---
+        const ROWS = 6;
+        const COLS = 7;
+        
+        // System state variables
+        let board = Array(ROWS).fill(null).map(() => Array(COLS).fill(null));
+        let activePlayer = 1; // 1: Red (Human), 2: Yellow (Human/AI)
+        let gameMode = 'PvAI'; // 'PvP' or 'PvAI'
+        let aiDifficulty = 'medium'; // 'easy', 'medium', 'hard'
+        let aiStartFirst = false;
+        let isMoving = false; // Prevent multi-clicks during transitions
+        let history = []; // Stack of moves for Undo feature
+        
+        // Statistics tracking (Syncs to local storage)
+        let statistics = {
+            classic: { p1: 0, p2: 0, draw: 0, streak: 0 },
+            cyberpunk: { p1: 0, p2: 0, draw: 0, streak: 0 },
+            wood: { p1: 0, p2: 0, draw: 0, streak: 0 },
+            minimal: { p1: 0, p2: 0, draw: 0, streak: 0 }
+        };
+
+        // Cache DOM elements
+        const boardGrid = document.getElementById('boardGrid');
+        const themeSelector = document.getElementById('themeSelector');
+        const soundToggle = document.getElementById('soundToggle');
+        const soundIcon = document.getElementById('soundIcon');
+        const soundText = document.getElementById('soundText');
+        const resetStats = document.getElementById('resetStats');
+        const modePvP = document.getElementById('modePvP');
+        const modePvAI = document.getElementById('modePvAI');
+        const aiConfigSection = document.getElementById('aiConfigSection');
+        const aiTurnSection = document.getElementById('aiTurnSection');
+        const aiStartFirstCheckbox = document.getElementById('aiStartFirst');
+        const statsP1 = document.getElementById('statsP1');
+        const statsDraw = document.getElementById('statsDraw');
+        const statsP2 = document.getElementById('statsP2');
+        const streakCounter = document.getElementById('streakCounter');
+        const p1NameText = document.getElementById('p1Name');
+        const p2NameText = document.getElementById('p2Name');
+        const btnUndo = document.getElementById('btnUndo');
+        const btnRestart = document.getElementById('btnRestart');
+        const turnIndicatorBall = document.getElementById('turnIndicatorBall');
+        const turnIndicatorText = document.getElementById('turnIndicatorText');
+        const thinkingSpinner = document.getElementById('thinkingSpinner');
+        const gameLog = document.getElementById('gameLog');
+        const gameEndOverlay = document.getElementById('gameEndOverlay');
+        const gameEndCard = document.getElementById('gameEndCard');
+        const resultModalIcon = document.getElementById('resultModalIcon');
+        const resultTitle = document.getElementById('resultTitle');
+        const resultText = document.getElementById('resultText');
+        const modalBtnMenu = document.getElementById('modalBtnMenu');
+        const modalBtnRematch = document.getElementById('modalBtnRematch');
+        
+        const modalP1Name = document.getElementById('modalP1Name');
+        const modalStatsP1 = document.getElementById('modalStatsP1');
+        const modalP2Name = document.getElementById('modalP2Name');
+        const modalStatsP2 = document.getElementById('modalStatsP2');
+        const modalStatsDraw = document.getElementById('modalStatsDraw');
+
+        // Load statistics
+        if (localStorage.getItem('connect4_statistics_multi')) {
+            try {
+                statistics = JSON.parse(localStorage.getItem('connect4_statistics_multi'));
+            } catch (e) {
+                console.error("Corrupted local storage. Resetting statistics.");
+            }
+        }
+
+        // Initialize board UI
+        function createBoardUI() {
+            boardGrid.innerHTML = '';
+            for (let r = 0; r < ROWS; r++) {
+                for (let c = 0; c < COLS; c++) {
+                    const slot = document.createElement('div');
+                    // Design token wrapper matching board theme
+                    slot.className = `relative aspect-square w-full flex items-center justify-center cursor-pointer group`;
+                    slot.dataset.col = c;
+                    slot.dataset.row = r;
+
+                    // Inner element displaying the hole
+                    const innerSlot = document.createElement('div');
+                    innerSlot.className = `w-4/5 h-4/5 rounded-full token token-empty relative z-10 transition-shadow duration-300`;
+                    innerSlot.id = `slot-${r}-${c}`;
+
+                    // Hole mask structure to simulate actual physics frame
+                    const holeMask = document.createElement('div');
+                    holeMask.className = `absolute inset-0 hole-mask`;
+
+                    slot.appendChild(innerSlot);
+                    slot.appendChild(holeMask);
+                    
+                    // Column selection guides trigger on hover over any slot in that column
+                    slot.addEventListener('mouseenter', () => highlightColumn(c, true));
+                    slot.addEventListener('mouseleave', () => highlightColumn(c, false));
+                    slot.addEventListener('click', () => handleHumanClick(c));
+
+                    boardGrid.appendChild(slot);
+                }
+            }
+        }
+
+        // Column highlighting guides
+        function highlightColumn(col, isHover) {
+            const guides = document.querySelectorAll('.col-selector-guide');
+            const slots = document.querySelectorAll(`[data-col="${col}"] .token-empty`);
+            
+            guides.forEach((g, idx) => {
+                if (idx === col && isHover) {
+                    g.classList.add('text-indigo-400', 'scale-125');
+                    g.classList.remove('text-slate-500');
+                } else {
+                    g.classList.remove('text-indigo-400', 'scale-125');
+                    g.classList.add('text-slate-500');
+                }
+            });
+
+            // Make virtual ghost drop token inside target column
+            if (isHover && !isMoving) {
+                const dropRow = getAvailableRow(col);
+                if (dropRow !== -1) {
+                    const slot = document.getElementById(`slot-${dropRow}-${col}`);
+                    if (slot && slot.classList.contains('token-empty')) {
+                        slot.classList.add('ring-4', activePlayer === 1 ? 'ring-rose-500/40' : 'ring-amber-500/40');
+                    }
+                }
+            } else {
+                // Clear any leftover ring styles
+                const allSlots = document.querySelectorAll('.token');
+                allSlots.forEach(s => s.classList.remove('ring-4', 'ring-rose-500/40', 'ring-amber-500/40'));
+            }
+        }
+
+        // Log actions dynamically in visual timeline
+        function addLog(message, type = 'info') {
+            const div = document.createElement('div');
+            let icon = `<i class="fa-solid fa-circle-info"></i>`;
+            let colorClass = 'text-slate-400';
+
+            if (type === 'p1') {
+                icon = `<i class="fa-solid fa-gamepad text-rose-500"></i>`;
+                colorClass = 'text-rose-400 font-medium';
+            } else if (type === 'p2' || type === 'ai') {
+                icon = `<i class="fa-solid fa-microchip text-amber-500"></i>`;
+                colorClass = 'text-amber-400 font-medium';
+            } else if (type === 'win') {
+                icon = `<i class="fa-solid fa-crown text-emerald-400 animate-bounce"></i>`;
+                colorClass = 'text-emerald-400 font-bold';
+            } else if (type === 'draw') {
+                icon = `<i class="fa-solid fa-scale-balanced text-sky-400"></i>`;
+                colorClass = 'text-sky-400 font-bold';
+            }
+
+            div.className = `${colorClass} flex items-start gap-1.5 transition-all duration-300`;
+            div.innerHTML = `${icon} <span>${message}</span>`;
+            
+            gameLog.appendChild(div);
+            gameLog.scrollTop = gameLog.scrollHeight;
+        }
+
+        // Check if column is vacant and find the deepest row index
+        function getAvailableRow(col, boardState = board) {
+            for (let r = ROWS - 1; r >= 0; r--) {
+                if (boardState[r][col] === null) {
+                    return r;
+                }
+            }
+            return -1;
+        }
+
+        // Drop animation triggers a CSS transition simulating realistic free-fall
+        function dropToken(row, col, player, callback) {
+            isMoving = true;
+            
+            // Create dropping element
+            const slot = document.getElementById(`slot-${row}-${col}`);
+            const cellRect = slot.getBoundingClientRect();
+            
+            // Generate visual particle
+            const particle = document.createElement('div');
+            particle.className = `absolute rounded-full token ${player === 1 ? 'token-p1' : 'token-p2'} z-0 drop-transition`;
+            
+            // Calculate starting Y position relative to board
+            const boardEl = document.querySelector('.board-wrapper');
+            const boardRect = boardEl.getBoundingClientRect();
+            
+            particle.style.width = `${cellRect.width}px`;
+            particle.style.height = `${cellRect.height}px`;
+            particle.style.left = `${cellRect.left - boardRect.left}px`;
+            particle.style.top = `${-cellRect.height}px`; // Start just above board edge
+            
+            boardEl.appendChild(particle);
+
+            // Play drop sound
+            audio.playDrop(row);
+
+            // Push execution down frame stack to force visual repaint
+            setTimeout(() => {
+                const targetTop = cellRect.top - boardRect.top;
+                particle.style.transform = `translateY(${targetTop + cellRect.height}px)`;
+            }, 30);
+
+            // When animation is complete, update model and swap layout styles
+            setTimeout(() => {
+                particle.remove();
+                slot.classList.remove('token-empty');
+                slot.classList.add(player === 1 ? 'token-p1' : 'token-p2');
+                
+                board[row][col] = player;
+                
+                isMoving = false;
+                if (callback) callback();
+            }, 550);
+        }
+
+        // Human Turn Click triggers
+        function handleHumanClick(col) {
+            if (isMoving) return;
+            if (gameMode === 'PvAI' && activePlayer === 2) return; // Prevent user playing for AI
+
+            const row = getAvailableRow(col);
+            if (row === -1) {
+                // Column Full sequence
+                audio.playClick();
+                addLog(`Column ${col + 1} is already full!`, 'info');
+                return;
+            }
+
+            executeMove(row, col);
+        }
+
+        // Perform move and step state machine forward
+        function executeMove(row, col) {
+            const currentPlayer = activePlayer;
+            history.push({ row, col, player: currentPlayer });
+            
+            const playerLabel = currentPlayer === 1 ? 'Red' : 'Yellow';
+            const logType = currentPlayer === 1 ? 'p1' : (gameMode === 'PvAI' ? 'ai' : 'p2');
+            addLog(`${playerLabel} dropped in Col ${col + 1}`, logType);
+
+            dropToken(row, col, currentPlayer, () => {
+                // Verify win or draw conditions
+                const winningStreak = checkWin(row, col, board);
+                if (winningStreak) {
+                    handleVictory(currentPlayer, winningStreak);
+                    return;
+                }
+
+                if (checkDraw(board)) {
+                    handleDraw();
+                    return;
+                }
+
+                // Switch turn sequence
+                activePlayer = activePlayer === 1 ? 2 : 1;
+                updateTurnIndicators();
+
+                // Call AI if configured
+                if (gameMode === 'PvAI' && activePlayer === 2) {
+                    triggerAIMove();
+                }
+            });
+        }
+
+        // Scan for 4-in-a-row connections from coordinate
+        function checkWin(row, col, boardState) {
+            const player = boardState[row][col];
+            if (!player) return null;
+
+            const directions = [
+                { dr: 0, dc: 1 },  // Horizontal
+                { dr: 1, dc: 0 },  // Vertical
+                { dr: 1, dc: 1 },  // Diagonal down-right
+                { dr: 1, dc: -1 }  // Diagonal down-left
+            ];
+
+            for (const { dr, dc } of directions) {
+                let segment = [{ r: row, c: col }];
+                
+                // Scan in positive direction
+                let r = row + dr;
+                let c = col + dc;
+                while (r >= 0 && r < ROWS && c >= 0 && c < COLS && boardState[r][c] === player) {
+                    segment.push({ r, c });
+                    r += dr;
+                    c += dc;
+                }
+
+                // Scan in negative direction
+                r = row - dr;
+                c = col - dc;
+                while (r >= 0 && r < ROWS && c >= 0 && c < COLS && boardState[r][c] === player) {
+                    segment.push({ r, c });
+                    r -= dr;
+                    c -= dc;
+                }
+
+                if (segment.length >= 4) {
+                    return segment; // Return exact cell indexes of winning segment
+                }
+            }
+            return null;
+        }
+
+        // Check if all cells are filled (Draw)
+        function checkDraw(boardState) {
+            for (let c = 0; c < COLS; c++) {
+                if (boardState[0][c] === null) return false;
+            }
+            return true;
+        }
+
+        // Minimax AI with Alpha-Beta pruning and Heuristic segment scanner
+        function triggerAIMove() {
+            thinkingSpinner.classList.remove('hidden');
+            turnIndicatorText.innerText = "AI is computing...";
+            
+            // Simulating network or thinking delay for realism
+            setTimeout(() => {
+                const bestCol = computeBestMove();
+                const bestRow = getAvailableRow(bestCol);
+                
+                thinkingSpinner.classList.add('hidden');
+                
+                if (bestRow !== -1) {
+                    executeMove(bestRow, bestCol);
+                } else {
+                    // Fallback to absolute random if AI gets stuck (unlikely)
+                    const validCols = getValidMoves();
+                    const fallBackCol = validCols[Math.floor(Math.random() * validCols.length)];
+                    executeMove(getAvailableRow(fallBackCol), fallBackCol);
+                }
+            }, 600);
+        }
+
+        // Get array of valid column indexes
+        function getValidMoves(boardState = board) {
+            const moves = [];
+            for (let c = 0; c < COLS; c++) {
+                if (boardState[0][c] === null) {
+                    moves.push(c);
+                }
+            }
+            return moves;
+        }
+
+        // Main entry point for AI column calculation
+        function computeBestMove() {
+            // Easy: Plays random columns mostly, blocks wins 10% of time
+            if (aiDifficulty === 'easy') {
+                return computeEasyMove();
+            }
+            
+            // Medium: Depths limits, looks ahead 2 moves
+            if (aiDifficulty === 'medium') {
+                const searchDepth = 3;
+                return minimaxDecision(searchDepth);
+            }
+            
+            // Expert: Higher depths, comprehensive heuristics evaluation
+            if (aiDifficulty === 'hard') {
+                const searchDepth = 5;
+                return minimaxDecision(searchDepth);
+            }
+        }
+
+        // Easy AI mode implementation
+        function computeEasyMove() {
+            const valid = getValidMoves();
+            // 20% of time make optimal, 80% random
+            if (Math.random() < 0.2) {
+                return minimaxDecision(1); // very shallow lookup
+            }
+            return valid[Math.floor(Math.random() * valid.length)];
+        }
+
+        // Minimax Root Execution
+        function minimaxDecision(depth) {
+            const validCols = getValidMoves();
+            
+            // Prioritize center column moves for positional control
+            const centerPreferences = [3, 2, 4, 1, 5, 0, 6];
+            const sortedMoves = validCols.sort((a, b) => {
+                return centerPreferences.indexOf(a) - centerPreferences.indexOf(b);
+            });
+
+            let bestScore = -Infinity;
+            let bestColumns = [];
+
+            for (const col of sortedMoves) {
+                const row = getAvailableRow(col);
+                // Simulate board move
+                board[row][col] = 2; // AI is Player 2
+                
+                const score = minimax(depth - 1, false, -Infinity, Infinity);
+                
+                // Undo move simulation
+                board[row][col] = null;
+
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestColumns = [col];
+                } else if (score === bestScore) {
+                    bestColumns.push(col);
+                }
+            }
+
+            // Pick randomly from equal-value top columns
+            return bestColumns[Math.floor(Math.random() * bestColumns.length)];
+        }
+
+        // Minimax recursion search tree
+        function minimax(depth, isMaximizing, alpha, beta) {
+            const validMoves = getValidMoves();
+            
+            // Terminal checks
+            // To evaluate terminals correctly, we must scan the virtual layout inside this function
+            const winP1 = scanTerminalWins(1);
+            const winP2 = scanTerminalWins(2);
+
+            if (winP2) return 100000 + depth; // Favor quicker wins
+            if (winP1) return -100000 - depth; // Favor slower opponent wins
+            if (validMoves.length === 0) return 0; // Draw
+            if (depth === 0) return evaluateHeuristics(board);
+
+            if (isMaximizing) {
+                let maxEval = -Infinity;
+                for (const col of validMoves) {
+                    const row = getAvailableRow(col);
+                    board[row][col] = 2;
+                    const evaluation = minimax(depth - 1, false, alpha, beta);
+                    board[row][col] = null;
+                    maxEval = Math.max(maxEval, evaluation);
+                    alpha = Math.max(alpha, evaluation);
+                    if (beta <= alpha) break; // Alpha-Beta cut-off
+                }
+                return maxEval;
+            } else {
+                let minEval = Infinity;
+                for (const col of validMoves) {
+                    const row = getAvailableRow(col);
+                    board[row][col] = 1;
+                    const evaluation = minimax(depth - 1, true, alpha, beta);
+                    board[row][col] = null;
+                    minEval = Math.min(minEval, evaluation);
+                    beta = Math.min(beta, evaluation);
+                    if (beta <= alpha) break; // Alpha-Beta cut-off
+                }
+                return minEval;
+            }
+        }
+
+        // Check terminal wins specifically for simulated paths in minimax
+        function scanTerminalWins(player) {
+            for (let r = 0; r < ROWS; r++) {
+                for (let c = 0; c < COLS; c++) {
+                    if (board[r][c] === player) {
+                        const win = checkWin(r, c, board);
+                        if (win) return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        // Advanced Connect 4 Positional Heuristic Evaluator
+        function evaluateHeuristics(boardState) {
+            let score = 0;
+
+            // Score central column weight
+            for (let r = 0; r < ROWS; r++) {
+                if (boardState[r][3] === 2) score += 3;
+                else if (boardState[r][3] === 1) score -= 3;
+            }
+
+            // Score horizontal, vertical, and diagonals
+            // 4-cell windows analysis
+            for (let r = 0; r < ROWS; r++) {
+                for (let c = 0; c < COLS - 3; c++) {
+                    const window = [boardState[r][c], boardState[r][c+1], boardState[r][c+2], boardState[r][c+3]];
+                    score += scoreWindow(window);
+                }
+            }
+
+            for (let c = 0; c < COLS; c++) {
+                for (let r = 0; r < ROWS - 3; r++) {
+                    const window = [boardState[r][c], boardState[r+1][c], boardState[r+2][c], boardState[r+3][c]];
+                    score += scoreWindow(window);
+                }
+            }
+
+            for (let r = 0; r < ROWS - 3; r++) {
+                for (let c = 0; c < COLS - 3; c++) {
+                    const window = [boardState[r][c], boardState[r+1][c+1], boardState[r+2][c+2], boardState[r+3][c+3]];
+                    score += scoreWindow(window);
+                }
+            }
+
+            for (let r = 3; r < ROWS; r++) {
+                for (let c = 0; c < COLS - 3; c++) {
+                    const window = [boardState[r][c], boardState[r-1][c+1], boardState[r-2][c+2], boardState[r-3][c+3]];
+                    score += scoreWindow(window);
+                }
+            }
+
+            return score;
+        }
+
+        // Helper scorer for 4-element sub-segments
+        function scoreWindow(window) {
+            let score = 0;
+            const aiCount = window.filter(cell => cell === 2).length;
+            const p1Count = window.filter(cell => cell === 1).length;
+            const emptyCount = window.filter(cell => cell === null).length;
+
+            if (aiCount === 4) {
+                score += 1000;
+            } else if (aiCount === 3 && emptyCount === 1) {
+                score += 50;
+            } else if (aiCount === 2 && emptyCount === 2) {
+                score += 10;
+            }
+
+            if (p1Count === 3 && emptyCount === 1) {
+                score -= 80; // Heavy penalty/importance on blocking opponent's 3-in-a-row
+            } else if (p1Count === 2 && emptyCount === 2) {
+                score -= 8;
+            }
+
+            return score;
+        }
+
+        // Victory triggers and visual indicators
+        function handleVictory(winner, segment) {
+            audio.playWin();
+            
+            // Light up winning connection points
+            segment.forEach(({ r, c }) => {
+                const slot = document.getElementById(`slot-${r}-${c}`);
+                if (slot) slot.classList.add('winner-glow');
+            });
+
+            const currentTheme = themeSelector.value;
+            const playerLabel = winner === 1 ? 'Player 1 (Red)' : (gameMode === 'PvAI' ? 'AI Assistant' : 'Player 2 (Yellow)');
+            const logType = winner === 1 ? 'p1' : (gameMode === 'PvAI' ? 'ai' : 'p2');
+            
+            addLog(`${playerLabel} CONNECTED 4 AND WON!`, 'win');
+
+            // Save statistics
+            if (winner === 1) {
+                statistics[currentTheme].p1++;
+                statistics[currentTheme].streak++;
+            } else {
+                statistics[currentTheme].p2++;
+                statistics[currentTheme].streak = 0; // Reset streak if AI/P2 wins
+            }
+            localStorage.setItem('connect4_statistics_multi', JSON.stringify(statistics));
+            updateStatsUI();
+
+            // Trigger beautiful Confetti bursts
+            const duration = 2.5 * 1000;
+            const animationEnd = Date.now() + duration;
+            const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 100 };
+
+            function randomInRange(min, max) {
+                return Math.random() * (max - min) + min;
+            }
+
+            const interval = setInterval(function() {
+                const timeLeft = animationEnd - Date.now();
+
+                if (timeLeft <= 0) {
+                    return clearInterval(interval);
+                }
+
+                const particleCount = 50 * (timeLeft / duration);
+                confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } }));
+                confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } }));
+            }, 250);
+
+            // Pop Victory Modal
+            setTimeout(() => {
+                showResultModal(
+                    winner === 1 ? "Victory Declared!" : "Defeat!",
+                    `${playerLabel} successfully linked a winning sequence of 4 inline tokens. Ready for another round?`,
+                    winner === 1 ? "fa-crown text-amber-400 bg-amber-500/10 border-amber-500/30" : "fa-robot text-rose-400 bg-rose-500/10 border-rose-500/30"
+                );
+            }, 1000);
+        }
+
+        // Draw triggers
+        function handleDraw() {
+            audio.playDraw();
+            const currentTheme = themeSelector.value;
+            statistics[currentTheme].draw++;
+            statistics[currentTheme].streak = 0;
+            localStorage.setItem('connect4_statistics_multi', JSON.stringify(statistics));
+            updateStatsUI();
+            
+            addLog("The match ended in a stale grid draw!", 'draw');
+
+            setTimeout(() => {
+                showResultModal(
+                    "Stalemate Draw",
+                    "The board is fully occupied without satisfying any alignment combinations.",
+                    "fa-scale-balanced text-sky-400 bg-sky-500/10 border-sky-500/30"
+                );
+            }, 1000);
+        }
+
+        // Display Result overlays
+        function showResultModal(title, text, iconClasses) {
+            resultTitle.innerText = title;
+            resultText.innerText = text;
+            
+            // Set styles dynamically
+            resultModalIcon.className = `w-20 h-20 border rounded-full flex items-center justify-center text-4xl shadow-inner ${iconClasses}`;
+
+            // Reveal modal
+            gameEndOverlay.classList.remove('opacity-0', 'pointer-events-none');
+            gameEndCard.classList.remove('scale-95');
+            gameEndCard.classList.add('scale-100');
+        }
+
+        function hideResultModal() {
+            gameEndOverlay.classList.add('opacity-0', 'pointer-events-none');
+            gameEndCard.classList.remove('scale-100');
+            gameEndCard.classList.add('scale-95');
+        }
+
+        // Turn labels updating dynamically
+        function updateTurnIndicators() {
+            // Update panel text
+            const playerColor = activePlayer === 1 ? 'Red' : 'Yellow';
+            let label = `Your Turn (${playerColor})`;
+            
+            if (gameMode === 'PvAI') {
+                label = activePlayer === 1 ? "Your Turn (Red)" : "AI thinking...";
+            } else {
+                label = activePlayer === 1 ? "Player 1's Turn (Red)" : "Player 2's Turn (Yellow)";
+            }
+            
+            turnIndicatorText.innerText = label;
+
+            // Turn indicator color balls
+            turnIndicatorBall.className = `w-3.5 h-3.5 rounded-full transition-all duration-300 ${activePlayer === 1 ? 'bg-red-500 shadow-[0_0_8px_#ef4444]' : 'bg-amber-500 shadow-[0_0_8px_#eab308]'}`;
+        }
+
+        // Sync Statistics layout with storage parameters
+        function updateStatsUI() {
+            const currentTheme = themeSelector.value;
+            const themeStats = statistics[currentTheme];
+
+            statsP1.innerText = themeStats.p1;
+            statsDraw.innerText = themeStats.draw;
+            statsP2.innerText = themeStats.p2;
+            
+            streakCounter.innerText = `${themeStats.streak} streak`;
+
+            // Modal sync
+            modalStatsP1.innerText = themeStats.p1;
+            modalStatsDraw.innerText = themeStats.draw;
+            modalStatsP2.innerText = themeStats.p2;
+        }
+
+        // Update labels on board configuration changes
+        function syncLabelsAndModeUI() {
+            if (gameMode === 'PvP') {
+                p1NameText.innerText = "Player 1";
+                p2NameText.innerText = "Player 2";
+                modalP1Name.innerText = "Player 1";
+                modalP2Name.innerText = "Player 2";
+                aiConfigSection.classList.add('hidden');
+                aiTurnSection.classList.add('hidden');
+            } else {
+                p1NameText.innerText = "You (Red)";
+                p2NameText.innerText = `AI (${aiDifficulty})`;
+                modalP1Name.innerText = "You";
+                modalP2Name.innerText = `AI (${aiDifficulty})`;
+                aiConfigSection.classList.remove('hidden');
+                aiTurnSection.classList.remove('hidden');
+            }
+        }
+
+        // Set up the aesthetic style theme classes
+        function handleThemeChange() {
+            const selectedTheme = themeSelector.value;
+            document.body.className = `theme-${selectedTheme}`;
+            updateStatsUI();
+            addLog(`Switched arena environment to ${selectedTheme.toUpperCase()}`, 'info');
+        }
+
+        // Complete restart routine
+        function resetGame() {
+            board = Array(ROWS).fill(null).map(() => Array(COLS).fill(null));
+            activePlayer = (gameMode === 'PvAI' && aiStartFirst) ? 2 : 1;
+            isMoving = false;
+            history = [];
+            
+            // Clean board rendering
+            createBoardUI();
+            updateTurnIndicators();
+            updateStatsUI();
+            
+            addLog("The board has been reset. Match started!", 'info');
+
+            if (gameMode === 'PvAI' && activePlayer === 2) {
+                triggerAIMove();
+            }
+        }
+
+        // Undo last action (removes last move from P1 & P2, or 2 actions in AI mode)
+        function handleUndo() {
+            if (isMoving) return;
+            if (history.length === 0) {
+                addLog("No moves registered on the board history.", 'info');
+                return;
+            }
+
+            audio.playClick();
+
+            // Clear visual winning highlights just in case
+            const allSlots = document.querySelectorAll('.token');
+            allSlots.forEach(s => s.classList.remove('winner-glow'));
+
+            if (gameMode === 'PvAI') {
+                // In Versus AI, Undo deletes the AI's move AND your last move
+                if (history.length >= 2) {
+                    const lastMoveAI = history.pop();
+                    undoSingleMove(lastMoveAI);
+                    const lastMoveP1 = history.pop();
+                    undoSingleMove(lastMoveP1);
+                    activePlayer = 1;
+                    addLog("Undid the last move pairing.", 'info');
+                } else {
+                    // Only one move on board (AI started first or P1 moved and AI hasn't resolved)
+                    const lastMove = history.pop();
+                    undoSingleMove(lastMove);
+                    activePlayer = lastMove.player;
+                    addLog("Undid the opening move.", 'info');
+                }
+            } else {
+                // In local PvP, just undoes the absolute last move
+                const lastMove = history.pop();
+                undoSingleMove(lastMove);
+                activePlayer = lastMove.player;
+                addLog(`Undid move in Col ${lastMove.col + 1}`, 'info');
+            }
+
+            updateTurnIndicators();
+        }
+
+        // Helper to visual undo a single cell
+        function undoSingleMove(moveObj) {
+            const { row, col } = moveObj;
+            board[row][col] = null;
+            const slot = document.getElementById(`slot-${row}-${col}`);
+            if (slot) {
+                slot.className = `w-4/5 h-4/5 rounded-full token token-empty relative z-10 transition-shadow duration-300`;
+            }
+        }
+
+        // --- EVENT BINDINGS ---
+        
+        // Mode switch selectors
+        modePvP.addEventListener('click', () => {
+            if (gameMode === 'PvP') return;
+            audio.playClick();
+            gameMode = 'PvP';
+            modePvP.className = "py-2 px-3 rounded-lg text-xs font-medium transition-all flex items-center justify-center gap-2 bg-indigo-600 text-white shadow-md";
+            modePvAI.className = "py-2 px-3 rounded-lg text-xs font-medium transition-all flex items-center justify-center gap-2 text-slate-400 hover:text-slate-200";
+            syncLabelsAndModeUI();
+            resetGame();
+        });
+
+        modePvAI.addEventListener('click', () => {
+            if (gameMode === 'PvAI') return;
+            audio.playClick();
+            gameMode = 'PvAI';
+            modePvAI.className = "py-2 px-3 rounded-lg text-xs font-medium transition-all flex items-center justify-center gap-2 bg-indigo-600 text-white shadow-md";
+            modePvP.className = "py-2 px-3 rounded-lg text-xs font-medium transition-all flex items-center justify-center gap-2 text-slate-400 hover:text-slate-200";
+            syncLabelsAndModeUI();
+            resetGame();
+        });
+
+        // AI Strength difficulty selectors
+        const difficultyButtons = document.querySelectorAll('.ai-diff-btn');
+        difficultyButtons.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                audio.playClick();
+                difficultyButtons.forEach(b => b.className = "ai-diff-btn py-1.5 text-xs rounded-lg font-medium transition-all hover:text-slate-200 text-slate-400");
+                e.target.className = "ai-diff-btn py-1.5 text-xs rounded-lg font-semibold transition-all hover:text-slate-200 bg-indigo-600 text-white";
+                aiDifficulty = e.target.dataset.diff;
+                syncLabelsAndModeUI();
+                resetGame();
+            });
+        });
+
+        // AI Start Switch
+        aiStartFirstCheckbox.addEventListener('change', (e) => {
+            audio.playClick();
+            aiStartFirst = e.target.checked;
+            resetGame();
+        });
+
+        // Theme dropdown bindings
+        themeSelector.addEventListener('change', handleThemeChange);
+
+        // Sound configuration binding
+        soundToggle.addEventListener('click', () => {
+            audio.muted = !audio.muted;
+            if (audio.muted) {
+                soundIcon.className = "fa-solid fa-volume-xmark";
+                soundText.innerText = "Muted";
+            } else {
+                audio.playClick();
+                soundIcon.className = "fa-solid fa-volume-high";
+                soundText.innerText = "Sound On";
+            }
+        });
+
+        // Reset local statistics storage
+        resetStats.addEventListener('click', () => {
+            audio.playClick();
+            const currentTheme = themeSelector.value;
+            statistics[currentTheme] = { p1: 0, p2: 0, draw: 0, streak: 0 };
+            localStorage.setItem('connect4_statistics_multi', JSON.stringify(statistics));
+            updateStatsUI();
+            addLog(`Reset statistics scoreboard for ${currentTheme.toUpperCase()}`, 'info');
+        });
+
+        // Main dashboard buttons
+        btnRestart.addEventListener('click', () => {
+            audio.playClick();
+            resetGame();
+        });
+
+        btnUndo.addEventListener('click', handleUndo);
+
+        // Modal triggers
+        modalBtnMenu.addEventListener('click', () => {
+            audio.playClick();
+            hideResultModal();
+        });
+
+        modalBtnRematch.addEventListener('click', () => {
+            audio.playClick();
+            hideResultModal();
+            resetGame();
+        });
+
+        // Initializer triggers
+        window.onload = function() {
+            createBoardUI();
+            syncLabelsAndModeUI();
+            updateStatsUI();
+            updateTurnIndicators();
+        };
+
+    </script>
+</body>
+</html>

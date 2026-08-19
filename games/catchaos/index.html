@@ -1,0 +1,1639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Cat Chaos</title>
+    <!-- Tailwind CSS for modern design -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Three.js Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        body {
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+            overflow: hidden;
+            background-color: #111827;
+        }
+        /* Custom scrollbar for level selector page */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1f2937;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #4b5563;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #6b7280;
+        }
+    </style>
+</head>
+<body class="w-full h-screen relative font-sans text-white">
+
+    <!-- Game UI Canvas -->
+    <canvas id="gameCanvas" class="absolute inset-0 w-full h-full block z-0"></canvas>
+
+    <!-- Overlay UI Screens -->
+    <div id="uiOverlay" class="absolute inset-0 flex flex-col justify-between pointer-events-none z-10 p-4">
+        
+        <!-- Top HUD (Visible during gameplay) -->
+        <div id="hud" class="w-full flex justify-between items-start pointer-events-auto hidden">
+            <!-- Left: Stats -->
+            <div class="bg-gray-900/80 backdrop-blur-md rounded-2xl p-4 border border-yellow-500/30 shadow-xl flex gap-6">
+                <div>
+                    <div class="text-xs text-yellow-400 uppercase tracking-wider font-semibold">Level</div>
+                    <div id="hudLevel" class="text-2xl font-bold">1</div>
+                </div>
+                <div>
+                    <div class="text-xs text-yellow-400 uppercase tracking-wider font-semibold">Knocked Over</div>
+                    <div id="hudScore" class="text-2xl font-bold">0 / 3</div>
+                </div>
+                <div>
+                    <div class="text-xs text-yellow-400 uppercase tracking-wider font-semibold">Time Left</div>
+                    <div id="hudTime" class="text-2xl font-bold text-red-400">45s</div>
+                </div>
+            </div>
+
+            <!-- Right: Action Buttons -->
+            <div class="flex gap-2">
+                <button id="pauseBtn" class="bg-gray-800/80 hover:bg-gray-700/80 transition-all p-3 rounded-xl border border-gray-600/50 shadow-md">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Touch Controls (Mobile Only) -->
+        <div id="mobileControls" class="w-full flex justify-between items-end pb-8 px-4 pointer-events-auto hidden">
+            <!-- Left: Virtual Joystick -->
+            <div class="relative w-36 h-36 bg-gray-800/40 border-2 border-white/20 rounded-full flex items-center justify-center shadow-inner backdrop-blur-xs" id="joystickZone">
+                <div class="absolute w-14 h-14 bg-yellow-500/80 border-2 border-yellow-300 rounded-full cursor-grab shadow-lg transition-transform active:scale-95" id="joystickKnob"></div>
+            </div>
+
+            <!-- Right: Skill / Interaction Buttons -->
+            <div class="flex flex-col gap-4">
+                <button id="mobileMeowBtn" class="w-16 h-16 bg-blue-500/80 active:bg-blue-600/90 border border-blue-400 rounded-full flex items-center justify-center font-bold shadow-lg transform active:scale-90 transition-transform text-xs">
+                    MEOW
+                </button>
+                <button id="mobileJumpBtn" class="w-20 h-20 bg-yellow-500/80 active:bg-yellow-600/90 border-2 border-yellow-400 rounded-full flex flex-col items-center justify-center font-bold shadow-lg transform active:scale-90 transition-transform">
+                    <span class="text-xs">POUNCE</span>
+                    <span class="text-[9px] opacity-75">(Jump)</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN START / LOBBY SCREEN -->
+    <div id="lobbyScreen" class="absolute inset-0 bg-gradient-to-br from-indigo-950 via-slate-900 to-emerald-950 flex flex-col items-center justify-center z-20 px-4 text-center overflow-y-auto">
+        <div class="max-w-xl bg-gray-900/90 border border-yellow-500/20 rounded-3xl p-8 shadow-2xl backdrop-blur-md my-8">
+            <div class="text-6xl mb-4 animate-bounce">🐱💥</div>
+            <h1 class="text-4xl md:text-5xl font-black bg-gradient-to-r from-yellow-400 via-orange-400 to-yellow-500 bg-clip-text text-transparent drop-shadow-md tracking-tight">
+                CAT CHAOS
+            </h1>
+            <p class="text-gray-400 mt-2 text-sm md:text-base">
+                An chaotic simulator of pure cat energy. Knock cups, vases, and plants off shelves while dodging patolling robotic vacuums across <span class="text-yellow-400 font-bold">150 Levels</span>!
+            </p>
+
+            <div class="mt-6 flex flex-col sm:flex-row gap-4 justify-center">
+                <button id="quickPlayBtn" class="px-8 py-4 bg-yellow-500 hover:bg-yellow-400 text-black font-black text-lg rounded-2xl shadow-lg hover:shadow-yellow-500/20 transition-all transform hover:-translate-y-0.5 active:scale-95">
+                    START CHAOS (Lvl 1)
+                </button>
+                <button id="selectLvlBtn" class="px-8 py-4 bg-gray-800 hover:bg-gray-700 text-white font-bold text-lg rounded-2xl border border-gray-700 transition-all transform hover:-translate-y-0.5">
+                    LEVEL SELECT (1-150)
+                </button>
+            </div>
+
+            <!-- Instructions -->
+            <div class="mt-8 border-t border-gray-800 pt-6 text-left">
+                <h3 class="text-yellow-400 text-xs uppercase tracking-wider font-semibold mb-2">How to Play:</h3>
+                <div class="grid grid-cols-2 gap-4 text-xs text-gray-300">
+                    <div>
+                        <span class="font-bold text-white">💻 Desktop:</span>
+                        <ul class="list-disc list-inside mt-1 space-y-1">
+                            <li>WASD / Arrows to Move</li>
+                            <li>Spacebar to Pounce (Jump)</li>
+                            <li>Left-Click & Drag to Look around</li>
+                            <li>Key <kbd class="bg-gray-800 px-1 rounded">M</kbd> to Meow</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <span class="font-bold text-white">📱 Mobile / Touch:</span>
+                        <ul class="list-disc list-inside mt-1 space-y-1">
+                            <li>On-screen Joystick to move</li>
+                            <li>Pounce & Meow Buttons</li>
+                            <li>Swipe on empty screen to look</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- LEVEL SELECTION MENU -->
+    <div id="levelSelectScreen" class="absolute inset-0 bg-slate-950 flex flex-col items-center justify-between z-30 px-4 py-8 hidden overflow-hidden">
+        <div class="w-full max-w-4xl flex justify-between items-center mb-4">
+            <button id="levelSelectBack" class="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-xl font-bold flex items-center gap-2 text-sm border border-gray-700">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                Main Menu
+            </button>
+            <h2 class="text-2xl md:text-3xl font-black text-yellow-400">SELECT LEVEL</h2>
+            <div class="text-sm font-bold bg-gray-900 border border-gray-800 px-4 py-1.5 rounded-full text-yellow-500" id="progressIndicator">
+                0 / 150 Unlocked
+            </div>
+        </div>
+
+        <!-- Pagination Controls -->
+        <div class="flex items-center gap-4 mb-4">
+            <button id="prevPageBtn" class="p-2.5 bg-gray-800 hover:bg-gray-700 disabled:opacity-30 disabled:hover:bg-gray-800 rounded-xl font-bold">
+                ◀ Prev
+            </button>
+            <span id="pageIndicator" class="text-sm font-bold text-gray-400">Page 1 of 10</span>
+            <button id="nextPageBtn" class="p-2.5 bg-gray-800 hover:bg-gray-700 disabled:opacity-30 disabled:hover:bg-gray-800 rounded-xl font-bold">
+                Next ▶
+            </button>
+        </div>
+
+        <!-- Levels Grid Container (Paginated) -->
+        <div class="w-full max-w-4xl flex-1 overflow-y-auto bg-gray-900/40 rounded-3xl border border-gray-800 p-6 shadow-inner">
+            <div id="levelsGrid" class="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-8 gap-3">
+                <!-- Programmatically generated buttons go here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- PAUSE / IN-GAME MENU OVERLAY -->
+    <div id="pauseMenu" class="absolute inset-0 bg-black/80 backdrop-blur-md flex flex-col items-center justify-center z-40 hidden">
+        <div class="bg-gray-900 border border-gray-800 p-8 rounded-3xl shadow-2xl text-center max-w-sm w-full mx-4">
+            <h2 class="text-3xl font-black text-yellow-400 mb-2">GAME PAUSED</h2>
+            <p class="text-gray-400 text-sm mb-6">Mischief currently suspended.</p>
+
+            <div class="flex flex-col gap-3">
+                <button id="resumeBtn" class="w-full py-3 bg-yellow-500 hover:bg-yellow-400 text-black font-black rounded-2xl transition-all">
+                    RESUME GAME
+                </button>
+                <button id="restartLvlBtn" class="w-full py-3 bg-gray-850 hover:bg-gray-800 border border-gray-700 text-white font-bold rounded-2xl transition-all">
+                    RESTART LEVEL
+                </button>
+                <button id="quitToMenuBtn" class="w-full py-3 bg-red-600/30 hover:bg-red-600/50 text-red-200 border border-red-500/30 font-bold rounded-2xl transition-all">
+                    QUIT TO MENU
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- LEVEL SUCCESS MODAL -->
+    <div id="successModal" class="absolute inset-0 bg-black/80 backdrop-blur-md flex flex-col items-center justify-center z-40 hidden">
+        <div class="bg-gray-900 border border-emerald-500/30 p-8 rounded-3xl shadow-2xl text-center max-w-sm w-full mx-4 transform scale-95 transition-transform duration-300">
+            <div class="text-5xl mb-3">🏆😸🎉</div>
+            <h2 class="text-3xl font-black text-emerald-400 mb-1">LEVEL COMPLETE!</h2>
+            <p class="text-gray-300 text-sm mb-6">You knocked everything off like a true professional.</p>
+
+            <div class="bg-gray-950 p-4 rounded-2xl border border-gray-800 mb-6 text-left space-y-1 text-xs">
+                <div class="flex justify-between"><span class="text-gray-400">Time Left Bonus:</span> <span id="successTimeBonus" class="font-bold text-white">0s</span></div>
+                <div class="flex justify-between"><span class="text-gray-400">Total Score:</span> <span id="successScore" class="font-bold text-yellow-400">Perfect!</span></div>
+            </div>
+
+            <div class="flex flex-col gap-3">
+                <button id="nextLevelBtn" class="w-full py-3 bg-emerald-500 hover:bg-emerald-400 text-black font-black rounded-2xl transition-all shadow-lg shadow-emerald-500/20">
+                    NEXT LEVEL
+                </button>
+                <button id="successRetryBtn" class="w-full py-3 bg-gray-800 hover:bg-gray-700 text-white font-bold rounded-2xl transition-all">
+                    REPLAY LEVEL
+                </button>
+                <button id="successLobbyBtn" class="w-full py-3 bg-gray-850 text-gray-400 hover:text-white rounded-2xl transition-all">
+                    MENU
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- LEVEL FAILURE MODAL -->
+    <div id="failureModal" class="absolute inset-0 bg-black/80 backdrop-blur-md flex flex-col items-center justify-center z-40 hidden">
+        <div class="bg-gray-900 border border-red-500/30 p-8 rounded-3xl shadow-2xl text-center max-w-sm w-full mx-4">
+            <div class="text-5xl mb-3">😿⏱️⚡</div>
+            <h2 class="text-3xl font-black text-red-500 mb-1">OUT OF TIME!</h2>
+            <p class="text-gray-300 text-sm mb-6">Humans caught you before you finished your chaos mission.</p>
+
+            <div class="flex flex-col gap-3">
+                <button id="failRetryBtn" class="w-full py-3 bg-red-500 hover:bg-red-400 text-black font-black rounded-2xl transition-all shadow-lg shadow-red-500/20">
+                    TRY AGAIN
+                </button>
+                <button id="failLobbyBtn" class="w-full py-3 bg-gray-800 hover:bg-gray-700 text-white font-bold rounded-2xl transition-all">
+                    MAIN MENU
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- CUSTOM AUDIO ENGINE & MAIN SCRIPT -->
+    <script>
+        // --- PROURAL SYNTHESIS AUDIO ---
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        function playMeow() {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const now = audioCtx.currentTime;
+            
+            // Core Pitch Sweep
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(350, now);
+            // Dynamic modulation for cute cat "me-ow" sweep
+            osc.frequency.exponentialRampToValueAtTime(750, now + 0.12);
+            osc.frequency.exponentialRampToValueAtTime(550, now + 0.28);
+            
+            gainNode.gain.setValueAtTime(0.001, now);
+            gainNode.gain.linearRampToValueAtTime(0.12, now + 0.05);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+            
+            osc.start(now);
+            osc.stop(now + 0.3);
+        }
+
+        function playCrash() {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const now = audioCtx.currentTime;
+            
+            // Noise Generator for shatter
+            const bufferSize = audioCtx.sampleRate * 0.3;
+            const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) {
+                data[i] = Math.random() * 2 - 1;
+            }
+            
+            const noise = audioCtx.createBufferSource();
+            noise.buffer = buffer;
+            
+            // Low-pass Filter for debris sound
+            const filter = audioCtx.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.setValueAtTime(1000, now);
+            filter.frequency.exponentialRampToValueAtTime(100, now + 0.25);
+            
+            const gainNode = audioCtx.createGain();
+            gainNode.gain.setValueAtTime(0.15, now);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+            
+            noise.connect(filter);
+            filter.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            
+            noise.start(now);
+            noise.stop(now + 0.3);
+
+            // Metallic Ring Sweep
+            const osc = audioCtx.createOscillator();
+            const oscGain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(1200, now);
+            osc.frequency.linearRampToValueAtTime(200, now + 0.15);
+            
+            oscGain.gain.setValueAtTime(0.05, now);
+            oscGain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+            
+            osc.connect(oscGain);
+            oscGain.connect(audioCtx.destination);
+            osc.start(now);
+            osc.stop(now + 0.15);
+        }
+
+        function playJump() {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(150, now);
+            osc.frequency.exponentialRampToValueAtTime(300, now + 0.1);
+            
+            gainNode.gain.setValueAtTime(0.08, now);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+            
+            osc.start(now);
+            osc.stop(now + 0.12);
+        }
+
+        function playStun() {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(220, now);
+            osc.frequency.linearRampToValueAtTime(80, now + 0.3);
+            
+            gainNode.gain.setValueAtTime(0.12, now);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+            
+            osc.start(now);
+            osc.stop(now + 0.35);
+        }
+
+        // --- LEVEL PROGRESSION SYSTEM ---
+        let maxUnlockedLevel = 1;
+        // Try loading progress
+        try {
+            const saved = localStorage.getItem('cat_sim_level');
+            if (saved) {
+                maxUnlockedLevel = Math.min(150, Math.max(1, parseInt(saved)));
+            }
+        } catch(e) {}
+
+        function unlockLevel(num) {
+            if (num > maxUnlockedLevel && num <= 150) {
+                maxUnlockedLevel = num;
+                try {
+                    localStorage.setItem('cat_sim_level', maxUnlockedLevel);
+                } catch(e) {}
+            }
+        }
+
+        // --- GAME STATE DEFINITIONS ---
+        let currentLevel = 1;
+        let score = 0;
+        let targetScore = 0;
+        let timeLeft = 0;
+        let gameActive = false;
+        let timerInterval = null;
+        let levelSelectPage = 0; // Pagination page index (15 levels per page)
+
+        // --- GAME LOOP & RENDERER SETUP ---
+        const canvas = document.getElementById('gameCanvas');
+        let renderer, scene, camera;
+        
+        // Game Physics & Loop entities
+        let cat, shadowPlane;
+        let tableGroup, roomWalls;
+        let props = []; // cups, vases, plant pots, laptops etc.
+        let obstacles = []; // Vacuum cleaners
+        let particles = [];
+        let keyState = {};
+        
+        // Cat simulation stats
+        const catStats = {
+            pos: new THREE.Vector3(0, 0, 0),
+            vel: new THREE.Vector3(0, 0, 0),
+            rotY: 0,
+            radius: 0.8,
+            speed: 12,
+            jumpStrength: 8,
+            onGround: true,
+            isStunned: false,
+            stunTimer: 0,
+            pounceAnimTimer: 0,
+            isMeowing: false,
+            meowTimer: 0
+        };
+
+        // Camera follow controller
+        let camSettings = {
+            distance: 9,
+            height: 5.5,
+            angle: Math.PI / 4, // Yaw angle
+            targetAngle: Math.PI / 4,
+            pitch: 0.5, // Pitch angle
+            isDragging: false,
+            lastMouseX: 0,
+            lastMouseY: 0
+        };
+
+        // Virtual joystick offsets
+        let touchStartPos = { x: 0, y: 0 };
+        let touchCurPos = { x: 0, y: 0 };
+        let activeTouchId = null;
+        let joystickActive = false;
+        let joystickVector = { x: 0, y: 0 };
+
+        // Colors per thematic group of 25 levels
+        const themes = [
+            { name: "Cozy Living Room", bg: 0x2b1e19, wall: 0x8c7853, floor: 0xd9b48f, table: 0x4d3220 }, // Level 1-25
+            { name: "Sleek Modern Kitchen", bg: 0x1f2937, wall: 0x4b5563, floor: 0x9ca3af, table: 0x111827 }, // Level 26-50
+            { name: "Messy Kid's Playroom", bg: 0x1e1b4b, wall: 0x312e81, floor: 0x4338ca, table: 0xfacc15 }, // Level 51-75
+            { name: "Grand Office / Library", bg: 0x180f0a, wall: 0x3d2012, floor: 0x5e2d15, table: 0x241107 }, // Level 76-100
+            { name: "Luxury Penthouse", bg: 0x0f172a, wall: 0x1e293b, floor: 0xcbd5e1, table: 0xf43f5e }, // Level 101-125
+            { name: "Alien Spaceship Room", bg: 0x020617, wall: 0x0f172a, floor: 0x1e293b, table: 0x38bdf8 }  // Level 126-150
+        ];
+
+        function getThemeForLevel(level) {
+            const index = Math.min(themes.length - 1, Math.floor((level - 1) / 25));
+            return themes[index];
+        }
+
+        // Programmatic Room Layout Engine
+        function getLevelConfig(level) {
+            const levelIdx = level - 1;
+            const theme = getThemeForLevel(level);
+            
+            // Standard config math to guarantee deterministic levels 1-150
+            const seed = (levelIdx * 19) % 100;
+            const targetItems = 2 + Math.floor(level / 8); 
+            const requiredKnockovers = Math.min(18, 2 + Math.floor(level / 10));
+            const timerSeconds = Math.max(25, 60 - Math.floor(level / 5));
+            const tableCount = Math.min(12, 3 + Math.floor(level / 12));
+            const vacuumCount = Math.min(4, Math.floor(level / 18));
+            
+            return {
+                level,
+                theme,
+                target: requiredKnockovers,
+                timeLimit: timerSeconds,
+                tables: tableCount,
+                vacuums: vacuumCount,
+                itemsPerTable: 2 + (levelIdx % 3)
+            };
+        }
+
+        // Initialize WebGL Scene
+        window.onload = function() {
+            initThree();
+            setupUI();
+            
+            // Auto start loop
+            animate();
+            
+            // Responsive layout update
+            window.addEventListener('resize', onWindowResize, false);
+        };
+
+        function initThree() {
+            // Setup scene
+            scene = new THREE.Scene();
+            
+            // Setup camera
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+            
+            // Setup renderer
+            renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, powerPreference: "high-performance" });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+            // Setup Lights
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+            scene.add(ambientLight);
+
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            dirLight.position.set(10, 25, 15);
+            dirLight.castShadow = true;
+            dirLight.shadow.mapSize.width = 1024;
+            dirLight.shadow.mapSize.height = 1024;
+            dirLight.shadow.camera.near = 0.5;
+            dirLight.shadow.camera.far = 40;
+            const d = 15;
+            dirLight.shadow.camera.left = -d;
+            dirLight.shadow.camera.right = d;
+            dirLight.shadow.camera.top = d;
+            dirLight.shadow.camera.bottom = -d;
+            scene.add(dirLight);
+
+            // Construct 3D Cat Actor
+            buildCat();
+
+            // Setup Event Handlers
+            window.addEventListener('keydown', e => { 
+                keyState[e.key.toLowerCase()] = true; 
+                if (e.key.toLowerCase() === 'm') {
+                    catMeow();
+                }
+                if (e.key === ' ' && catStats.onGround) {
+                    catJump();
+                }
+            });
+            window.addEventListener('keyup', e => { keyState[e.key.toLowerCase()] = false; });
+
+            // Interactive Camera Mouse Drag
+            window.addEventListener('mousedown', e => {
+                // Ignore click if over interactive elements
+                if (e.target.tagName === 'BUTTON' || e.target.closest('#hud') || e.target.closest('#joystickZone')) return;
+                camSettings.isDragging = true;
+                camSettings.lastMouseX = e.clientX;
+                camSettings.lastMouseY = e.clientY;
+            });
+
+            window.addEventListener('mousemove', e => {
+                if (camSettings.isDragging) {
+                    const deltaX = e.clientX - camSettings.lastMouseX;
+                    const deltaY = e.clientY - camSettings.lastMouseY;
+                    camSettings.targetAngle -= deltaX * 0.007;
+                    camSettings.pitch = Math.max(0.1, Math.min(1.2, camSettings.pitch + deltaY * 0.005));
+                    camSettings.lastMouseX = e.clientX;
+                    camSettings.lastMouseY = e.clientY;
+                }
+            });
+
+            window.addEventListener('mouseup', () => { camSettings.isDragging = false; });
+
+            // Mobile Touch Camera Swiping & Controls
+            canvas.addEventListener('touchstart', e => {
+                const touch = e.touches[0];
+                if (touch.clientX > window.innerWidth / 2) {
+                    camSettings.isDragging = true;
+                    camSettings.lastMouseX = touch.clientX;
+                    camSettings.lastMouseY = touch.clientY;
+                }
+            }, { passive: true });
+
+            canvas.addEventListener('touchmove', e => {
+                const touch = e.touches[0];
+                if (camSettings.isDragging) {
+                    const deltaX = touch.clientX - camSettings.lastMouseX;
+                    const deltaY = touch.clientY - camSettings.lastMouseY;
+                    camSettings.targetAngle -= deltaX * 0.01;
+                    camSettings.pitch = Math.max(0.1, Math.min(1.2, camSettings.pitch + deltaY * 0.008));
+                    camSettings.lastMouseX = touch.clientX;
+                    camSettings.lastMouseY = touch.clientY;
+                }
+            }, { passive: true });
+
+            canvas.addEventListener('touchend', () => { camSettings.isDragging = false; });
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        // --- PROCEDURAL 3D CAT ACTOR ---
+        let legFR, legFL, legRR, legRL, tailGroup, catHead;
+        
+        function buildCat() {
+            cat = new THREE.Group();
+            
+            // Cat Body Material: Cute Orange Tabby stripes
+            const bodyMat = new THREE.MeshStandardMaterial({ color: 0xe67e22, roughness: 0.6 });
+            const whiteMat = new THREE.MeshStandardMaterial({ color: 0xf5f6fa, roughness: 0.6 });
+            const darkMat = new THREE.MeshStandardMaterial({ color: 0x2c3e50, roughness: 0.5 });
+            const pinkMat = new THREE.MeshStandardMaterial({ color: 0xffa07a, roughness: 0.8 });
+
+            // Torso (Boxy for voxel charm, highly performant)
+            const torsoGeo = new THREE.BoxGeometry(0.7, 0.55, 1.2);
+            const torso = new THREE.Mesh(torsoGeo, bodyMat);
+            torso.position.y = 0.45;
+            torso.castShadow = true;
+            torso.receiveShadow = true;
+            cat.add(torso);
+
+            // Head
+            catHead = new THREE.Group();
+            catHead.position.set(0, 0.75, 0.6);
+            
+            const headGeo = new THREE.BoxGeometry(0.55, 0.5, 0.5);
+            const skull = new THREE.Mesh(headGeo, bodyMat);
+            skull.castShadow = true;
+            catHead.add(skull);
+
+            // Snout/Cheeks
+            const snoutGeo = new THREE.BoxGeometry(0.35, 0.2, 0.15);
+            const snout = new THREE.Mesh(snoutGeo, whiteMat);
+            snout.position.set(0, -0.1, 0.3);
+            catHead.add(snout);
+
+            // Nose
+            const noseGeo = new THREE.BoxGeometry(0.1, 0.08, 0.05);
+            const nose = new THREE.Mesh(noseGeo, pinkMat);
+            nose.position.set(0, -0.05, 0.38);
+            catHead.add(nose);
+
+            // Ears
+            const earGeo = new THREE.ConeGeometry(0.12, 0.25, 4);
+            earGeo.rotateY(Math.PI / 4);
+            
+            const earR = new THREE.Mesh(earGeo, bodyMat);
+            earR.position.set(0.2, 0.3, 0);
+            earR.rotation.z = -0.1;
+            catHead.add(earR);
+
+            const earL = new THREE.Mesh(earGeo, bodyMat);
+            earL.position.set(-0.2, 0.3, 0);
+            earL.rotation.z = 0.1;
+            catHead.add(earL);
+
+            // Eyes
+            const eyeGeo = new THREE.BoxGeometry(0.08, 0.12, 0.04);
+            const eyeR = new THREE.Mesh(eyeGeo, darkMat);
+            eyeR.position.set(0.15, 0.08, 0.24);
+            catHead.add(eyeR);
+
+            const eyeL = new THREE.Mesh(eyeGeo, darkMat);
+            eyeL.position.set(-0.15, 0.08, 0.24);
+            catHead.add(eyeL);
+
+            cat.add(catHead);
+
+            // Legs (4 independent cylinder segments for walking motion)
+            const legGeo = new THREE.BoxGeometry(0.15, 0.45, 0.15);
+            
+            legFL = new THREE.Mesh(legGeo, bodyMat);
+            legFL.position.set(-0.24, 0.2, 0.4);
+            legFL.castShadow = true;
+            cat.add(legFL);
+
+            legFR = new THREE.Mesh(legGeo, bodyMat);
+            legFR.position.set(0.24, 0.2, 0.4);
+            legFR.castShadow = true;
+            cat.add(legFR);
+
+            legRL = new THREE.Mesh(legGeo, bodyMat);
+            legRL.position.set(-0.24, 0.2, -0.4);
+            legRL.castShadow = true;
+            cat.add(legRL);
+
+            legRR = new THREE.Mesh(legGeo, bodyMat);
+            legRR.position.set(0.24, 0.2, -0.4);
+            legRR.castShadow = true;
+            cat.add(legRR);
+
+            // Tail
+            tailGroup = new THREE.Group();
+            tailGroup.position.set(0, 0.6, -0.55);
+            
+            const tailGeo = new THREE.BoxGeometry(0.1, 0.7, 0.1);
+            tailGeo.translate(0, 0.3, 0); // Translate origin to base pivot
+            const tailMesh = new THREE.Mesh(tailGeo, bodyMat);
+            tailMesh.castShadow = true;
+            tailMesh.rotation.x = -0.6;
+            tailGroup.add(tailMesh);
+            cat.add(tailGroup);
+
+            scene.add(cat);
+
+            // Simple Shadow Plane to ground the cat
+            const shadowGeo = new THREE.PlaneGeometry(1.6, 1.6);
+            const shadowMat = new THREE.MeshBasicMaterial({
+                color: 0x000000,
+                transparent: true,
+                opacity: 0.35,
+                depthWrite: false
+            });
+            shadowPlane = new THREE.Mesh(shadowGeo, shadowMat);
+            shadowPlane.rotation.x = -Math.PI / 2;
+            shadowPlane.position.y = 0.01;
+            scene.add(shadowPlane);
+        }
+
+        // --- PROC-BUILD ENTIRE LEVEL ENVIRONMENT ---
+        function loadLevel(levelNum) {
+            // Cleanup existing elements
+            if (tableGroup) scene.remove(tableGroup);
+            if (roomWalls) scene.remove(roomWalls);
+            props.forEach(p => scene.remove(p.mesh));
+            obstacles.forEach(o => scene.remove(o.mesh));
+            particles.forEach(p => scene.remove(p.mesh));
+            
+            props = [];
+            obstacles = [];
+            particles = [];
+
+            const config = getLevelConfig(levelNum);
+            currentLevel = levelNum;
+            score = 0;
+            targetScore = config.target;
+            timeLeft = config.timeLimit;
+            
+            // Apply Scene background color based on theme
+            scene.background = new THREE.Color(config.theme.bg);
+            scene.fog = new THREE.FogExp2(config.theme.bg, 0.02);
+
+            // Build Room boundaries
+            roomWalls = new THREE.Group();
+            
+            // Floor Plate
+            const floorGeo = new THREE.PlaneGeometry(35, 35);
+            const floorMat = new THREE.MeshStandardMaterial({ color: config.theme.floor, roughness: 0.75 });
+            const floorMesh = new THREE.Mesh(floorGeo, floorMat);
+            floorMesh.rotation.x = -Math.PI / 2;
+            floorMesh.receiveShadow = true;
+            roomWalls.add(floorMesh);
+
+            // Warm Rug
+            const rugGeo = new THREE.BoxGeometry(10, 0.01, 10);
+            const rugMat = new THREE.MeshStandardMaterial({ color: 0xbf360c, roughness: 0.9 });
+            const rug = new THREE.Mesh(rugGeo, rugMat);
+            rug.position.set(0, 0.01, 0);
+            rug.receiveShadow = true;
+            roomWalls.add(rug);
+
+            // Cozy Walls (Back and Left/Right edges to construct closed room)
+            const wallMat = new THREE.MeshStandardMaterial({ color: config.theme.wall });
+            
+            const backWallGeo = new THREE.BoxGeometry(35, 8, 1);
+            const backWall = new THREE.Mesh(backWallGeo, wallMat);
+            backWall.position.set(0, 4, -17.5);
+            backWall.receiveShadow = true;
+            roomWalls.add(backWall);
+
+            const sideWallGeo = new THREE.BoxGeometry(1, 8, 35);
+            const leftWall = new THREE.Mesh(sideWallGeo, wallMat);
+            leftWall.position.set(-17.5, 4, 0);
+            leftWall.receiveShadow = true;
+            roomWalls.add(leftWall);
+
+            const rightWall = new THREE.Mesh(sideWallGeo, wallMat);
+            rightWall.position.set(17.5, 4, 0);
+            rightWall.receiveShadow = true;
+            roomWalls.add(rightWall);
+
+            scene.add(roomWalls);
+
+            // Construct Tables and Shelves
+            tableGroup = new THREE.Group();
+            const tableMat = new THREE.MeshStandardMaterial({ color: config.theme.table, roughness: 0.5 });
+            
+            // Build dynamic table configurations depending on the seed
+            for (let i = 0; i < config.tables; i++) {
+                // Determine layout coordinates
+                const angle = (i / config.tables) * Math.PI * 2 + (levelNum * 0.7);
+                const radius = 6 + (i % 2) * 4;
+                const tx = Math.cos(angle) * radius;
+                const tz = Math.sin(angle) * radius;
+
+                // Table height and shape logic (some are side tables, some long counters, some tall shelves)
+                const isTallShelf = (i % 3 === 0);
+                const tableW = isTallShelf ? 1.5 : 3.5;
+                const tableD = isTallShelf ? 1.5 : 1.8;
+                const tableH = isTallShelf ? 3.0 : 1.5;
+
+                const tGroup = new THREE.Group();
+                tGroup.position.set(tx, 0, tz);
+
+                // Table Top
+                const topGeo = new THREE.BoxGeometry(tableW, 0.15, tableD);
+                const topMesh = new THREE.Mesh(topGeo, tableMat);
+                topMesh.position.y = tableH;
+                topMesh.castShadow = true;
+                topMesh.receiveShadow = true;
+                tGroup.add(topMesh);
+
+                // Table Legs (4 cylinder rods)
+                const legGeo = new THREE.CylinderGeometry(0.1, 0.1, tableH);
+                const offsets = [
+                    [-tableW/2 + 0.2, -tableD/2 + 0.2],
+                    [tableW/2 - 0.2, -tableD/2 + 0.2],
+                    [-tableW/2 + 0.2, tableD/2 - 0.2],
+                    [tableW/2 - 0.2, tableD/2 - 0.2]
+                ];
+                
+                offsets.forEach(offset => {
+                    const leg = new THREE.Mesh(legGeo, tableMat);
+                    leg.position.set(offset[0], tableH/2, offset[1]);
+                    leg.castShadow = true;
+                    tGroup.add(leg);
+                });
+
+                // For Tall shelves, add extra intermediate boards
+                if (isTallShelf) {
+                    const midBoard = new THREE.Mesh(topGeo, tableMat);
+                    midBoard.position.y = tableH * 0.5;
+                    midBoard.castShadow = true;
+                    tGroup.add(midBoard);
+                }
+
+                tableGroup.add(tGroup);
+
+                // Spawn items on this piece of furniture
+                const layers = isTallShelf ? [tableH * 0.5 + 0.1, tableH + 0.1] : [tableH + 0.1];
+                layers.forEach(ly => {
+                    const itemsCount = config.itemsPerTable;
+                    for (let k = 0; k < itemsCount; k++) {
+                        const px = tx + (Math.random() - 0.5) * (tableW - 0.6);
+                        const pz = tz + (Math.random() - 0.5) * (tableD - 0.6);
+                        spawnKnockableProp(px, ly, pz, ly - 0.1);
+                    }
+                });
+            }
+
+            scene.add(tableGroup);
+
+            // Spawn patrolling Vacuum Cleaner obstacles
+            for (let i = 0; i < config.vacuums; i++) {
+                spawnVacuum();
+            }
+
+            // Reset Cat Player Position
+            catStats.pos.set(0, 0, 0);
+            catStats.vel.set(0, 0, 0);
+            catStats.rotY = 0;
+            catStats.onGround = true;
+            catStats.isStunned = false;
+            catStats.stunTimer = 0;
+            
+            // Align cat mesh
+            cat.position.copy(catStats.pos);
+            cat.rotation.y = catStats.rotY;
+
+            // Align Shadow plane
+            shadowPlane.position.set(0, 0.01, 0);
+            shadowPlane.scale.set(1, 1, 1);
+
+            // Sync HUD text
+            updateHUD();
+            
+            // Setup timer interval
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                if (gameActive) {
+                    timeLeft--;
+                    updateHUD();
+                    if (timeLeft <= 0) {
+                        endLevel(false);
+                    }
+                }
+            }, 1000);
+
+            // Re-center camera behind cat
+            camSettings.targetAngle = Math.PI / 4;
+            camSettings.pitch = 0.5;
+        }
+
+        // --- SUBENTITY GENERATION ---
+        function spawnKnockableProp(x, y, z, tableY) {
+            // Randomly choose prop styles (Vase, Coffee Mug, Cute Laptop, Flower Pot)
+            const types = ['vase', 'mug', 'plant', 'laptop'];
+            const type = types[Math.floor(Math.random() * types.length)];
+            const propGroup = new THREE.Group();
+
+            let meshGeo, meshMat;
+            const seedColor = Math.random();
+
+            if (type === 'vase') {
+                // Classic Tall Glass Vase
+                const baseGeo = new THREE.CylinderGeometry(0.18, 0.22, 0.55, 8);
+                const neckGeo = new THREE.CylinderGeometry(0.12, 0.16, 0.15, 8);
+                neckGeo.translate(0, 0.35, 0);
+                
+                meshGeo = THREE.BufferGeometryUtils ? 
+                    THREE.BufferGeometryUtils.mergeBufferGeometries([baseGeo, neckGeo]) : 
+                    baseGeo; // Fallback
+                
+                meshMat = new THREE.MeshStandardMaterial({
+                    color: seedColor > 0.5 ? 0x00d2d3 : 0xff7675,
+                    roughness: 0.1,
+                    metalness: 0.1,
+                    transparent: true,
+                    opacity: 0.85
+                });
+            } else if (type === 'mug') {
+                // Mug
+                meshGeo = new THREE.CylinderGeometry(0.15, 0.15, 0.3, 8);
+                meshMat = new THREE.MeshStandardMaterial({ color: 0x9c27b0, roughness: 0.3 });
+            } else if (type === 'plant') {
+                // Clay Pot with green flora top
+                const potGeo = new THREE.CylinderGeometry(0.2, 0.14, 0.3, 8);
+                const potMat = new THREE.MeshStandardMaterial({ color: 0xe67e22, roughness: 0.8 });
+                const pot = new THREE.Mesh(potGeo, potMat);
+                pot.castShadow = true;
+                propGroup.add(pot);
+
+                const plantGeo = new THREE.SphereGeometry(0.25, 6, 6);
+                plantGeo.translate(0, 0.25, 0);
+                const plantMat = new THREE.MeshStandardMaterial({ color: 0x2ecc71, roughness: 0.9 });
+                const plant = new THREE.Mesh(plantGeo, plantMat);
+                plant.castShadow = true;
+                propGroup.add(plant);
+                
+                meshGeo = null; // Mark as pre-built group
+            } else {
+                // Thin Laptop
+                meshGeo = new THREE.BoxGeometry(0.5, 0.08, 0.45);
+                meshMat = new THREE.MeshStandardMaterial({ color: 0xbdc3c7, roughness: 0.4 });
+            }
+
+            if (meshGeo) {
+                const primaryMesh = new THREE.Mesh(meshGeo, meshMat);
+                primaryMesh.castShadow = true;
+                primaryMesh.receiveShadow = true;
+                propGroup.add(primaryMesh);
+            }
+
+            propGroup.position.set(x, y, z);
+            scene.add(propGroup);
+
+            // Bounding definitions for collision physics
+            props.push({
+                type: type,
+                mesh: propGroup,
+                vel: new THREE.Vector3(0, 0, 0),
+                radius: 0.35,
+                height: 0.6,
+                originalTableY: tableY,
+                knocked: false,
+                onGround: false,
+                pos: new THREE.Vector3(x, y, z)
+            });
+        }
+
+        function spawnVacuum() {
+            // Little round autonomous vacuum obstacle
+            const vac = new THREE.Group();
+            
+            const bodyGeo = new THREE.CylinderGeometry(0.6, 0.6, 0.25, 12);
+            const bodyMat = new THREE.MeshStandardMaterial({ color: 0x22252a, roughness: 0.4 });
+            const body = new THREE.Mesh(bodyGeo, bodyMat);
+            body.position.y = 0.125;
+            body.castShadow = true;
+            vac.add(body);
+
+            // Flashing laser scanner eye
+            const eyeGeo = new THREE.BoxGeometry(0.15, 0.1, 0.15);
+            const eyeMat = new THREE.MeshBasicMaterial({ color: 0xe74c3c });
+            const eye = new THREE.Mesh(eyeGeo, eyeMat);
+            eye.position.set(0, 0.22, 0.45);
+            vac.add(eye);
+
+            // Setup random wander course
+            const range = 12;
+            const x = (Math.random() - 0.5) * range;
+            const z = (Math.random() - 0.5) * range;
+            vac.position.set(x, 0, z);
+
+            scene.add(vac);
+
+            obstacles.push({
+                mesh: vac,
+                pos: new THREE.Vector3(x, 0, z),
+                angle: Math.random() * Math.PI * 2,
+                speed: 3 + Math.random() * 2,
+                radius: 0.6
+            });
+        }
+
+        // --- PARTICLE EMITTER SYSTEM ---
+        function triggerShatterEffect(x, y, z, colorHex) {
+            const count = 12;
+            const debrisMat = new THREE.MeshStandardMaterial({ color: colorHex || 0xffffff, roughness: 0.5 });
+            
+            for (let i = 0; i < count; i++) {
+                const size = 0.05 + Math.random() * 0.08;
+                const partGeo = new THREE.BoxGeometry(size, size, size);
+                const partMesh = new THREE.Mesh(partGeo, debrisMat);
+                
+                partMesh.position.set(x, y + 0.1, z);
+                scene.add(partMesh);
+
+                // Assign scatter trajectories
+                const angle = Math.random() * Math.PI * 2;
+                const force = 1 + Math.random() * 4;
+                particles.push({
+                    mesh: partMesh,
+                    vel: new THREE.Vector3(Math.cos(angle) * force, 2 + Math.random() * 5, Math.sin(angle) * force),
+                    life: 0.6 + Math.random() * 0.4
+                });
+            }
+        }
+
+        // --- CAT ACTION LOGIC ---
+        function catJump() {
+            if (catStats.onGround && !catStats.isStunned) {
+                catStats.vel.y = catStats.jumpStrength;
+                catStats.onGround = false;
+                catStats.pounceAnimTimer = 0.5; // Trigger body stretch frame
+                playJump();
+            }
+        }
+
+        function catMeow() {
+            if (catStats.meowTimer <= 0) {
+                catStats.isMeowing = true;
+                catStats.meowTimer = 0.6; // Meow anim length
+                playMeow();
+                
+                // Blast radius to vibrate nearby props!
+                props.forEach(p => {
+                    const dist = catStats.pos.distanceTo(p.pos);
+                    if (dist < 2.5) {
+                        const dir = new THREE.Vector3().subVectors(p.pos, catStats.pos);
+                        dir.y = 0;
+                        dir.normalize();
+                        p.vel.addScaledVector(dir, 2.0); // Slight kinetic nudge
+                    }
+                });
+            }
+        }
+
+        // --- PHYSICAL COLLISION SIMULATIONS ---
+        function updatePhysics(dt) {
+            if (!gameActive) return;
+
+            // 1. DAMP AND SOLVE CAT PLAYER POSITION
+            if (catStats.isStunned) {
+                catStats.stunTimer -= dt;
+                if (catStats.stunTimer <= 0) {
+                    catStats.isStunned = false;
+                }
+                // Decelerate stun slides
+                catStats.vel.x *= 0.9;
+                catStats.vel.z *= 0.9;
+            } else {
+                // Read Input Vectors
+                let moveX = 0;
+                let moveZ = 0;
+
+                // Handle Keyboard WASD
+                if (keyState['w'] || keyState['arrowup']) moveZ += 1;
+                if (keyState['s'] || keyState['arrowdown']) moveZ -= 1;
+                if (keyState['a'] || keyState['arrowleft']) moveX += 1;
+                if (keyState['d'] || keyState['arrowright']) moveX -= 1;
+
+                // Handle Joystick overrides
+                if (joystickActive) {
+                    moveX = -joystickVector.x;
+                    moveZ = joystickVector.y;
+                }
+
+                if (moveX !== 0 || moveZ !== 0) {
+                    // Translate direction keys relative to Camera Yaw/Angle!
+                    const forward = new THREE.Vector3(0, 0, -1).applyAxisAngle(new THREE.Vector3(0, 1, 0), camSettings.angle);
+                    const right = new THREE.Vector3(1, 0, 0).applyAxisAngle(new THREE.Vector3(0, 1, 0), camSettings.angle);
+                    
+                    forward.y = 0;
+                    right.y = 0;
+                    forward.normalize();
+                    right.normalize();
+
+                    const moveDir = new THREE.Vector3()
+                        .addScaledVector(right, -moveX)
+                        .addScaledVector(forward, moveZ)
+                        .normalize();
+
+                    catStats.vel.x = moveDir.x * catStats.speed;
+                    catStats.vel.z = moveDir.z * catStats.speed;
+
+                    // Align Cat Yaw rotation towards movement path
+                    const targetRot = Math.atan2(-moveDir.x, -moveDir.z);
+                    // Smooth rot transition
+                    let diff = targetRot - catStats.rotY;
+                    while (diff < -Math.PI) diff += Math.PI * 2;
+                    while (diff > Math.PI) diff -= Math.PI * 2;
+                    catStats.rotY += diff * 0.15;
+                } else {
+                    // Smooth braking
+                    catStats.vel.x *= 0.75;
+                    catStats.vel.z *= 0.75;
+                }
+            }
+
+            // Apply gravity constant
+            catStats.vel.y -= 22 * dt;
+            catStats.pos.addScaledVector(catStats.vel, dt);
+
+            // Ground boundary collision resolve
+            if (catStats.pos.y <= 0) {
+                catStats.pos.y = 0;
+                catStats.vel.y = 0;
+                catStats.onGround = true;
+            }
+
+            // Room Walls boundaries clamp
+            const boundarySize = 16.5;
+            if (catStats.pos.x < -boundarySize) { catStats.pos.x = -boundarySize; catStats.vel.x = 0; }
+            if (catStats.pos.x > boundarySize) { catStats.pos.x = boundarySize; catStats.vel.x = 0; }
+            if (catStats.pos.z < -boundarySize) { catStats.pos.z = -boundarySize; catStats.vel.z = 0; }
+            if (catStats.pos.z > boundarySize) { catStats.pos.z = boundarySize; catStats.vel.z = 0; }
+
+            // Collide and slide with table boundaries
+            tableGroup.children.forEach(table => {
+                const tx = table.position.x;
+                const tz = table.position.z;
+                
+                // Get config sizing
+                const tableW = table.children[0].geometry.parameters.width;
+                const tableD = table.children[0].geometry.parameters.depth;
+                const tableH = table.children[0].position.y;
+
+                // Check box collision
+                const halfW = tableW / 2 + 0.35;
+                const halfD = tableD / 2 + 0.35;
+
+                const dx = catStats.pos.x - tx;
+                const dz = catStats.pos.z - tz;
+
+                if (Math.abs(dx) < halfW && Math.abs(dz) < halfD) {
+                    // Vertical overlap check
+                    if (catStats.pos.y < tableH + 0.1 && catStats.pos.y + 0.85 > tableH - 0.1) {
+                        // If landing from above, snap to tabletop
+                        if (catStats.vel.y < 0 && catStats.pos.y >= tableH - 0.3) {
+                            catStats.pos.y = tableH + 0.08;
+                            catStats.vel.y = 0;
+                            catStats.onGround = true;
+                        } else {
+                            // Side wall bounce back
+                            const penX = halfW - Math.abs(dx);
+                            const penZ = halfD - Math.abs(dz);
+                            if (penX < penZ) {
+                                catStats.pos.x += Math.sign(dx) * penX;
+                                catStats.vel.x = 0;
+                            } else {
+                                catStats.pos.z += Math.sign(dz) * penZ;
+                                catStats.vel.z = 0;
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Update Cat model transforms
+            cat.position.copy(catStats.pos);
+            cat.rotation.y = catStats.rotY;
+
+            // Cat Leg / Tail Walks animation formula
+            const speedMagnitude = Math.sqrt(catStats.vel.x**2 + catStats.vel.z**2);
+            if (speedMagnitude > 0.5 && catStats.onGround) {
+                const cycle = Date.now() * 0.012;
+                legFL.rotation.x = Math.sin(cycle) * 0.65;
+                legFR.rotation.x = -Math.sin(cycle) * 0.65;
+                legRL.rotation.x = -Math.sin(cycle) * 0.65;
+                legRR.rotation.x = Math.sin(cycle) * 0.65;
+                tailGroup.rotation.z = Math.sin(cycle * 0.5) * 0.25;
+            } else {
+                legFL.rotation.x = 0;
+                legFR.rotation.x = 0;
+                legRL.rotation.x = 0;
+                legRR.rotation.x = 0;
+                tailGroup.rotation.z = 0;
+            }
+
+            // Head wiggle and pounce animation scaling
+            if (catStats.meowTimer > 0) {
+                catStats.meowTimer -= dt;
+                catHead.scale.set(1.2, 1.2, 1.2);
+            } else {
+                catHead.scale.set(1, 1, 1);
+            }
+
+            // Adjust Shadow Plane scale/opacity as cat jumps high
+            const heightFactor = Math.max(0, 1 - catStats.pos.y / 8);
+            shadowPlane.position.set(catStats.pos.x, 0.015, catStats.pos.z);
+            shadowPlane.scale.set(heightFactor, heightFactor, heightFactor);
+            shadowPlane.material.opacity = 0.35 * heightFactor;
+
+            // 2. SOLVE PROP GRAVITY, COLLISION AND DEBRIS BREAKS
+            props.forEach(p => {
+                // If already resting broken on ground, skip active simulation
+                if (p.knocked && p.onGround) return;
+
+                // Translate movement speeds
+                p.vel.y -= 18 * dt; // Gravity
+                p.pos.addScaledVector(p.vel, dt);
+
+                // Floor collision checks
+                if (p.pos.y <= 0.15) {
+                    p.pos.y = 0.15;
+                    p.vel.set(0, 0, 0);
+                    p.onGround = true;
+
+                    // If knocked down from a high table originally, break/shatter!
+                    if (!p.knocked && p.pos.y < p.originalTableY - 0.2) {
+                        p.knocked = true;
+                        score++;
+                        playCrash();
+                        triggerShatterEffect(p.pos.x, p.pos.y, p.pos.z, 0xef5350);
+                        updateHUD();
+
+                        // Visual squish/damage scale
+                        p.mesh.scale.set(1.1, 0.25, 1.1);
+                        p.mesh.position.y = 0.05;
+
+                        // Check Win conditions
+                        if (score >= targetScore) {
+                            endLevel(true);
+                        }
+                    }
+                }
+
+                // Tabletop support verification
+                let supported = false;
+                if (!p.knocked) {
+                    tableGroup.children.forEach(table => {
+                        const tx = table.position.x;
+                        const tz = table.position.z;
+                        const tableW = table.children[0].geometry.parameters.width;
+                        const tableD = table.children[0].geometry.parameters.depth;
+                        const tableH = table.children[0].position.y;
+
+                        // Check within top dimensions
+                        const dx = p.pos.x - tx;
+                        const dz = p.pos.z - tz;
+                        if (Math.abs(dx) < tableW/2 && Math.abs(dz) < tableD/2) {
+                            // Check top shelf
+                            if (Math.abs(p.pos.y - tableH) < 0.25 && p.vel.y <= 0) {
+                                p.pos.y = tableH + 0.1;
+                                p.vel.y = 0;
+                                p.onGround = true;
+                                supported = true;
+                            }
+                            // Check lower shelf if it is a tall shelf (tableH > 2.0)
+                            if (tableH > 2.0) {
+                                const midH = tableH * 0.5;
+                                if (Math.abs(p.pos.y - midH) < 0.25 && p.vel.y <= 0) {
+                                    p.pos.y = midH + 0.1;
+                                    p.vel.y = 0;
+                                    p.onGround = true;
+                                    supported = true;
+                                }
+                            }
+                        }
+                    });
+                }
+
+                if (!supported && p.pos.y > 0.15) {
+                    p.onGround = false;
+                }
+
+                // Drag friction
+                p.vel.x *= 0.96;
+                p.vel.z *= 0.96;
+
+                p.mesh.position.copy(p.pos);
+
+                // Collision with Cat Player
+                const distance = p.pos.distanceTo(catStats.pos);
+                const collisionThreshold = catStats.radius + p.radius;
+                if (distance < collisionThreshold) {
+                    // Blast momentum to prop relative to Cat's current Speed
+                    const pushDir = new THREE.Vector3().subVectors(p.pos, catStats.pos);
+                    pushDir.y = 0; // Prevent infinite upwards launches
+                    pushDir.normalize();
+
+                    const speed = Math.max(2.5, speedMagnitude);
+                    p.vel.addScaledVector(pushDir, speed * 0.9);
+                    p.onGround = false;
+                }
+            });
+
+            // 3. OBSTACLE PATROL AI & COLLISION STUNS
+            obstacles.forEach(o => {
+                // Robot moves relative to its face angle
+                o.pos.x += Math.cos(o.angle) * o.speed * dt;
+                o.pos.z += Math.sin(o.angle) * o.speed * dt;
+
+                // Wall bounce boundaries check
+                const bound = 15;
+                if (Math.abs(o.pos.x) > bound || Math.abs(o.pos.z) > bound) {
+                    o.angle += Math.PI * 0.5 + Math.random() * Math.PI; // Spin around
+                    o.pos.x = Math.max(-bound, Math.min(bound, o.pos.x));
+                    o.pos.z = Math.max(-bound, Math.min(bound, o.pos.z));
+                }
+
+                o.mesh.position.copy(o.pos);
+                o.mesh.rotation.y = -o.angle + Math.PI / 2;
+
+                // Check collision with Cat Player (Stuns and pushes Cat!)
+                const distance = o.pos.distanceTo(catStats.pos);
+                if (distance < (o.radius + catStats.radius) && !catStats.isStunned) {
+                    catStats.isStunned = true;
+                    catStats.stunTimer = 1.0; // Stun duration 1s
+                    playStun();
+
+                    // Propel cat backwards violently
+                    const bounceDir = new THREE.Vector3().subVectors(catStats.pos, o.pos).normalize();
+                    catStats.vel.copy(bounceDir).multiplyScalar(15);
+                    catStats.vel.y = 4.5; // Jump bump
+                }
+            });
+
+            // 4. EMITTED PARTICLES PROGRESSION
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const part = particles[i];
+                part.life -= dt;
+                part.vel.y -= 9.8 * dt; // gravity
+                part.mesh.position.addScaledVector(part.vel, dt);
+                
+                // Spin rotation simulation
+                part.mesh.rotation.x += 0.1;
+                part.mesh.rotation.y += 0.1;
+
+                if (part.mesh.position.y < 0.02) {
+                    part.mesh.position.y = 0.02;
+                    part.vel.set(0,0,0);
+                }
+
+                if (part.life <= 0) {
+                    scene.remove(part.mesh);
+                    particles.splice(i, 1);
+                }
+            }
+        }
+
+        // --- CAMERA FOLLOW MECHANICS ---
+        function updateCamera() {
+            // Smooth yaw/pitch transitions
+            camSettings.angle += (camSettings.targetAngle - camSettings.angle) * 0.15;
+
+            // Math spherical coordinates relative to Cat Position
+            const offsetX = camSettings.distance * Math.sin(camSettings.angle) * Math.cos(camSettings.pitch);
+            const offsetZ = camSettings.distance * Math.cos(camSettings.angle) * Math.cos(camSettings.pitch);
+            const offsetY = camSettings.distance * Math.sin(camSettings.pitch);
+
+            camera.position.set(
+                catStats.pos.x + offsetX,
+                catStats.pos.y + offsetY + 1,
+                catStats.pos.z + offsetZ
+            );
+            
+            // Camera tracks cat with a slight vertical look-offset
+            camera.lookAt(catStats.pos.x, catStats.pos.y + 0.8, catStats.pos.z);
+        }
+
+        // --- RENDERING LOOP ---
+        let lastTime = performance.now();
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            const time = performance.now();
+            const dt = Math.min(0.05, (time - lastTime) / 1000); // capped to avoid huge spikes
+            lastTime = time;
+
+            updatePhysics(dt);
+            updateCamera();
+
+            renderer.render(scene, camera);
+        }
+
+        // --- GAMEPLAY TRIGGERS & MENUS ---
+        function setupUI() {
+            // Level Selector Generator
+            renderLevelSelect();
+
+            // Menu Bindings
+            document.getElementById('quickPlayBtn').addEventListener('click', () => {
+                startGame(1);
+            });
+
+            document.getElementById('selectLvlBtn').addEventListener('click', () => {
+                showScreen('levelSelectScreen');
+            });
+
+            document.getElementById('levelSelectBack').addEventListener('click', () => {
+                showScreen('lobbyScreen');
+            });
+
+            document.getElementById('pauseBtn').addEventListener('click', () => {
+                pauseGame();
+            });
+
+            document.getElementById('resumeBtn').addEventListener('click', () => {
+                resumeGame();
+            });
+
+            document.getElementById('restartLvlBtn').addEventListener('click', () => {
+                restartLevel();
+            });
+
+            document.getElementById('quitToMenuBtn').addEventListener('click', () => {
+                quitToMenu();
+            });
+
+            // Modal Bindings
+            document.getElementById('nextLevelBtn').addEventListener('click', () => {
+                if (currentLevel < 150) {
+                    startGame(currentLevel + 1);
+                } else {
+                    quitToMenu();
+                }
+            });
+
+            document.getElementById('successRetryBtn').addEventListener('click', () => {
+                restartLevel();
+            });
+
+            document.getElementById('successLobbyBtn').addEventListener('click', () => {
+                quitToMenu();
+            });
+
+            document.getElementById('failRetryBtn').addEventListener('click', () => {
+                restartLevel();
+            });
+
+            document.getElementById('failLobbyBtn').addEventListener('click', () => {
+                quitToMenu();
+            });
+
+            // Mobile specific click triggers
+            document.getElementById('mobileJumpBtn').addEventListener('touchstart', e => {
+                e.preventDefault();
+                catJump();
+            });
+            document.getElementById('mobileMeowBtn').addEventListener('touchstart', e => {
+                e.preventDefault();
+                catMeow();
+            });
+
+            // Touch Joystick Controller setup
+            setupJoystick();
+        }
+
+        function showScreen(id) {
+            // Hide all overlays
+            document.getElementById('lobbyScreen').classList.add('hidden');
+            document.getElementById('levelSelectScreen').classList.add('hidden');
+            document.getElementById('hud').classList.add('hidden');
+            document.getElementById('mobileControls').classList.add('hidden');
+            document.getElementById('pauseMenu').classList.add('hidden');
+            document.getElementById('successModal').classList.add('hidden');
+            document.getElementById('failureModal').classList.add('hidden');
+
+            // Show selected
+            if (id === 'hud') {
+                document.getElementById('hud').classList.remove('hidden');
+                // Detect mobile user-agent to display touch buttons
+                if ('ontouchstart' in window) {
+                    document.getElementById('mobileControls').classList.remove('hidden');
+                }
+            } else {
+                document.getElementById(id).classList.remove('hidden');
+            }
+        }
+
+        function renderLevelSelect() {
+            const grid = document.getElementById('levelsGrid');
+            grid.innerHTML = '';
+            
+            // 15 items per page config
+            const itemsPerPage = 15;
+            const totalPages = Math.ceil(150 / itemsPerPage);
+            const startIdx = levelSelectPage * itemsPerPage;
+            const endIdx = Math.min(150, startIdx + itemsPerPage);
+
+            document.getElementById('pageIndicator').innerText = `Page ${levelSelectPage + 1} of ${totalPages}`;
+            document.getElementById('progressIndicator').innerText = `${maxUnlockedLevel} / 150 Unlocked`;
+
+            document.getElementById('prevPageBtn').disabled = (levelSelectPage === 0);
+            document.getElementById('nextPageBtn').disabled = (levelSelectPage >= totalPages - 1);
+
+            // Bind click handlers to prev/next buttons safely
+            document.getElementById('prevPageBtn').onclick = () => {
+                if (levelSelectPage > 0) {
+                    levelSelectPage--;
+                    renderLevelSelect();
+                }
+            };
+            document.getElementById('nextPageBtn').onclick = () => {
+                if (levelSelectPage < totalPages - 1) {
+                    levelSelectPage++;
+                    renderLevelSelect();
+                }
+            };
+
+            for (let i = startIdx; i < endIdx; i++) {
+                const lvlNum = i + 1;
+                const button = document.createElement('button');
+                
+                const isLocked = lvlNum > maxUnlockedLevel;
+                button.className = `aspect-square flex flex-col items-center justify-center rounded-2xl font-black text-lg border transition-all ${
+                    isLocked 
+                    ? 'bg-gray-950/40 border-gray-800 text-gray-600 cursor-not-allowed' 
+                    : 'bg-yellow-500/10 border-yellow-500/30 text-yellow-400 hover:bg-yellow-500 hover:text-black cursor-pointer'
+                }`;
+
+                if (isLocked) {
+                    button.innerHTML = `
+                        <span class="text-xs text-gray-500">Lvl</span>
+                        <span>${lvlNum}</span>
+                        <svg class="w-3.5 h-3.5 text-gray-600 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                    `;
+                } else {
+                    button.innerHTML = `
+                        <span class="text-[10px] uppercase opacity-75">Lvl</span>
+                        <span class="text-xl">${lvlNum}</span>
+                    `;
+                    button.addEventListener('click', () => {
+                        startGame(lvlNum);
+                    });
+                }
+                grid.appendChild(button);
+            }
+        }
+
+        function startGame(levelNum) {
+            loadLevel(levelNum);
+            gameActive = true;
+            showScreen('hud');
+        }
+
+        function updateHUD() {
+            document.getElementById('hudLevel').innerText = currentLevel;
+            document.getElementById('hudScore').innerText = `${score} / ${targetScore}`;
+            document.getElementById('hudTime').innerText = `${timeLeft}s`;
+        }
+
+        function pauseGame() {
+            gameActive = false;
+            document.getElementById('pauseMenu').classList.remove('hidden');
+        }
+
+        function resumeGame() {
+            gameActive = true;
+            document.getElementById('pauseMenu').classList.add('hidden');
+        }
+
+        function restartLevel() {
+            document.getElementById('pauseMenu').classList.add('hidden');
+            document.getElementById('successModal').classList.add('hidden');
+            document.getElementById('failureModal').classList.add('hidden');
+            startGame(currentLevel);
+        }
+
+        function quitToMenu() {
+            gameActive = false;
+            if (timerInterval) clearInterval(timerInterval);
+            renderLevelSelect();
+            showScreen('lobbyScreen');
+        }
+
+        function endLevel(isSuccess) {
+            gameActive = false;
+            if (timerInterval) clearInterval(timerInterval);
+
+            if (isSuccess) {
+                // Save progress
+                unlockLevel(currentLevel + 1);
+                
+                // Show Success Modal
+                document.getElementById('successTimeBonus').innerText = `${timeLeft}s`;
+                document.getElementById('successModal').classList.remove('hidden');
+            } else {
+                // Show Failure Modal
+                document.getElementById('failureModal').classList.remove('hidden');
+            }
+        }
+
+        // --- VIRTUAL JOYSTICK IMPLEMENTATION ---
+        function setupJoystick() {
+            const zone = document.getElementById('joystickZone');
+            const knob = document.getElementById('joystickKnob');
+            
+            zone.addEventListener('touchstart', e => {
+                const touch = e.touches[0];
+                activeTouchId = touch.identifier;
+                joystickActive = true;
+                
+                const rect = zone.getBoundingClientRect();
+                touchStartPos = {
+                    x: rect.left + rect.width / 2,
+                    y: rect.top + rect.height / 2
+                };
+            }, { passive: true });
+
+            zone.addEventListener('touchmove', e => {
+                if (!joystickActive) return;
+                
+                // Find active identifier touch coordinates
+                let touch = null;
+                for (let i = 0; i < e.touches.length; i++) {
+                    if (e.touches[i].identifier === activeTouchId) {
+                        touch = e.touches[i];
+                        break;
+                    }
+                }
+                if (!touch) return;
+
+                const dx = touch.clientX - touchStartPos.x;
+                const dy = touch.clientY - touchStartPos.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                const maxRange = 50; // Max radius joystick can travel
+
+                const angle = Math.atan2(dy, dx);
+                const travel = Math.min(distance, maxRange);
+
+                // Displace knob element visually
+                const kx = Math.cos(angle) * travel;
+                const ky = Math.sin(angle) * travel;
+                knob.style.transform = `translate(${kx}px, ${ky}px)`;
+
+                // Normalize vector for physics movement logic
+                joystickVector.x = kx / maxRange;
+                joystickVector.y = ky / maxRange;
+            }, { passive: true });
+
+            const stopJoystick = () => {
+                joystickActive = false;
+                activeTouchId = null;
+                knob.style.transform = `translate(0px, 0px)`;
+                joystickVector = { x: 0, y: 0 };
+            };
+
+            zone.addEventListener('touchend', stopJoystick);
+            zone.addEventListener('touchcancel', stopJoystick);
+        }
+    </script>
+</body>
+</html>
