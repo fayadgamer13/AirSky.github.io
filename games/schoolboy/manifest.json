@@ -1,0 +1,17 @@
+{
+   "action": {
+      "default_icon": "icon.png",
+      "default_popup": "popup.html"
+   },
+   "description": "Dive into Schoolboy Runaway Unblocked hassle-free—no internet required, just open the popup and immerse yourself in the action!",
+   "icons": {
+      "128": "icon.png",
+      "48": "icon.png"
+   },
+   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArennhsOrmLnwC3jinOFIGm4P4r+ElJxovB80pZOo8IIhsZMJXyyYEsY7YbEWLIMKuv52VQaMUhj5vkQrOXH/ThwN2Uk5Bhyy2cKmR8wD1ybDCYfdPGPlu/cR7oMnWNuBlowiH/s5lgQP4aSWIhv7C0KJWGb+OtTalZ2L8WJ/MygF6QJDtmXS1c2K2aMYMO6lsPbeL1ulDK4PzMlUVLae8XMAXOvo1ntGFabB/MdAEZaKOwIXxGH8BRxRNqP2y+5t33MmnKEJnk8hoc0acXsU4m5D9AeAIXtXOUURIyDsejh6PBpxAcDpJH8Tyk1PJoB7tB6i2CCuC30k+jgpMymgwQIDAQAB",
+   "manifest_version": 3,
+   "name": "Schoolboy Runaway Unblocked",
+   "permissions": [  ],
+   "update_url": "https://clients2.google.com/service/update2/crx",
+   "version": "1.0"
+}

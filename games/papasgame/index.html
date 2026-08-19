@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Papa's Games</title>
+    </head>
+    <body>
+          
+        <a href="papasgames/games/papas-sushiria.html" class="button-card" target="_blank">
+  <div class="card-content">
+    <img src="images/error.png" alt="Papa Sushiria" class="card-image">
+    <h3 class="card-text">Papa Sushiria</h3>
+  </div>
+</a>
+        
+       <a href="papasgames/games/papas-pastaria.html" class="button-card" target="_blank">
+  <div class="card-content">
+    <img src="images/error.png" alt="Papa's Pastaria" class="card-image">
+    <h3 class="card-text">Papa's Pastaria</h3>
+  </div>
+</a>
+    
+    </body>
+    <script src="script.js"></script>
+    <style>
+        
+        body {
+            background-color: black;
+        }
+
+        .button-card {
+  text-decoration: none; /* Removes underline from text */
+  color: inherit; /* Keeps text color consistent */
+  display: inline-block;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  overflow: hidden;
+  transition: transform 0.2s, box-shadow 0.2s;
+  width: 300px; /* Adjust as needed */
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.button-card:hover {
+  transform: translateY(-5px); /* Lifts card on hover */
+  box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+}
+
+.card-image {
+  width: 100%;
+  height: 200px;
+  object-fit: cover; /* Ensures image covers area without stretching */
+}
+
+.card-text {
+  padding: 15px;
+  text-align: center;
+  margin: 0;
+  font-family: sans-serif;
+  color: #ffffff;
+}
+
+    </style>
+</html>

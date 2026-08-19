@@ -1,0 +1,13 @@
+{
+"companyName": "Turbo Chilli",
+"productName": "Rolling Sky",
+"dataUrl": "rollingsky.data.unityweb",
+"asmCodeUrl": "rollingsky.asm.code.unityweb",
+"asmMemoryUrl": "rollingsky.asm.memory.unityweb",
+"asmFrameworkUrl": "rollingsky.asm.framework.unityweb",
+"TOTAL_MEMORY": 268435456,
+"graphicsAPI": ["WebGL 2.0", "WebGL 1.0"],
+"webglContextAttributes": {"preserveDrawingBuffer": false},
+"splashScreenStyle": "Dark",
+"backgroundColor": "#231F20"
+}
