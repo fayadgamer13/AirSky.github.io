@@ -14,6 +14,106 @@
 </head>
 <body>
 
+        <dialog id="Dialog">
+        <h1 id="dialogText">AIRSKY 2.0 IS OUT NOW AND HERE ARE THE FEATURES AND GAMES THAT HAVE ARRIVED!</h1>
+     <section>
+    <h2>GAMES</h2>
+    <ul>
+        <li>World's Hardest Game</inline></li>
+        <li>Slow Roads</inline></li>
+        <li>Age of Conflict</inline></li>
+        <li>Basketball Random</inline></li>
+        <li>Little Alchemy 2</inline></li>
+        <li>Odd Bot Out</inline></li>
+        <li>Masked Force</inline></li>
+        <li>OvO</inline></li>
+        <li>Paper.io 2</inline></li>
+        <li>Smash Karts</inline></li>
+        <li>Soccer Skills: Euro Cup 2021</inline></li>
+        <li>Tag</li>
+    </ul>
+</section>
+
+<section>
+    <h2>FIXED GAMES</h2>
+    <ul>
+        <li>Eggy Car</inline></li>
+        <li>Blumgi Slime</inline></li>
+        <li>Scrap Metal</inline></li>
+        <li>Idle Ants</inline></li>
+        <li>We Become What We Behold</inline></li>
+    </ul>
+</section>
+
+<section>
+    <h2>FEATURES</h2>
+    <ul>
+        <li>Hidden Games</li>
+        <li>Background Animation</li>
+        <li>Card Hover Border Effect</li>
+        <li>Export/Import AirSky Data (.airsky)</li>
+    </ul>
+</section>
+                <h2>NEXT FEATURES & GAMES ON 2.1</h2>
+            <section>
+                <h1>GAMES & FEATURES ON 2.1</h1>
+                <ul>
+                    <li>More Subway Surfers Version</li>
+                    <li>Fixing Games That won't load up.</li>
+                    <li>AirSky For Android</li>
+                    <li>AirSky For Windows</li>
+                    <li>More Game That Never on other game website</li>
+                    <li>Adding Some Optimization to AirSky for Mobiles</li>
+                    <li>Fixing "Stuff to Check Out" Not Appearing On Mobile Devices</li>
+                    <li>Adding Friends & Chat Feature</li>
+                </ul>
+            </section>
+            <h2>Stay Tuned For the Update!</h2>
+            <p>Release Date: September 20</p>
+        <button id="closeBtn" class="timer-btn" disabled>OK</button>
+            <script>
+                        // DOM Elements
+        const dialog = document.getElementById('myDialog');
+        const dialogText = document.getElementById('dialogText');
+        const closeBtn = document.getElementById('closeBtn');
+
+        let timeLeft = 5;
+
+        // 1. Automatically open the dialog as soon as the page loads
+        window.addEventListener('DOMContentLoaded', () => {
+            dialog.showModal(); // Opens dialog natively and blocks background page interaction
+            startCountdown();
+        });
+
+        // 2. Countdown timer logic
+        function startCountdown() {
+            const timer = setInterval(() => {
+                timeLeft--;
+
+                if (timeLeft > 0) {
+                    dialogText.textContent = `Please wait ${timeLeft} seconds...`;
+                } else {
+                    clearInterval(timer); // Stop the countdown
+                    dialogText.textContent = "You can now proceed.";
+                    closeBtn.disabled = false; // Enable the greyed out button
+                }
+            }, 1000); // Triggers every 1 second
+        }
+
+        // 3. Close dialog when clicking the active button
+        closeBtn.addEventListener('click', () => {
+            dialog.close();
+        });
+
+        // Optional: Prevent users from closing the dialog early with the Escape key
+        dialog.addEventListener('cancel', (event) => {
+            if (timeLeft > 0) {
+                event.preventDefault(); 
+            }
+        });
+            </script>
+    </dialog>
+
 <img id="custom-cursor-follower" src="system/rounded.png" alt="Cursor Follower" style="display:none; position:fixed; pointer-events:none; z-index:99999; width:32px; height:32px; transform: translate(-50%, -50%);">
 
 <nav class="side-nav" id="side-nav">
