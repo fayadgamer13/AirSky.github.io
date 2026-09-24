@@ -605,7 +605,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         } else {
             const levelEl = document.getElementById('battery-level');
-            if (levelEl) levelEl.innerText = "N/A";
+            if (levelEl) levelEl.innerText = "Battery Detected Failed!";
         }
     }
 
